@@ -51,12 +51,13 @@ export const getProjectApplicants = async(req,res) => {
     console.log("Fetching Project Applicants");
     try{
         const projectId = req.params.id;
+        const project = await Project.findById(projectId);
         const applicants = await Application.find({
             project: projectId,
             status: "pending"
-        }).populate("applicant", "name bio parsedSkills")
-        res.status(200).json(applicants);
-    }catch(err){
+        }).populate("applicant", "name bio skills")
+        res.status(200).json({project,applicants});
+    }catch(err){    
          res.status(500).json({error: "Server Error", e:err.message});
     }
 }

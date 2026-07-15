@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import connectDb from './db/db.js';
+import cors from 'cors';
 //Routes
 import authRoutes from './Routes/authRoutes.js';
 import projectRoutes from './Routes/projectRoutes.js';
@@ -13,6 +14,7 @@ const port = process.env.PORT;
 
 connectDb();
 let app = express();
+app.use(cors());
 app.use(express.json()); //for raw json post
 app.use(express.urlencoded({extended:false})); //for x-www-form-urlencoded
 app.use(middleware);
