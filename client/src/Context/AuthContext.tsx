@@ -33,7 +33,6 @@ export function AuthProvider({children}: AuthProviderProps){
     },[])
 
     const login = (token: string, user:AuthUser) => {
-        console.log("Logging in:", token);
         localStorage.setItem("token",token);
         localStorage.setItem("user", JSON.stringify(user));
 

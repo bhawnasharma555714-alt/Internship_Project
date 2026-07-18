@@ -9,7 +9,10 @@ import ProtectedRoute from './Components/ProtectedRoute';
 import MyProjects from './Pages/MyProjects';
 import ProjectDetails from './Pages/ProjectDetails';
 import MyApplications from './Pages/MyApplications';
+import EditProject from './Pages/EditProject'; 
 import Applicants from './Pages/Applicants';
+
+import './app.css';
 
 
 function App() {
@@ -26,6 +29,7 @@ function App() {
         <Route path='/my-applications' element={<ProtectedRoute><MyApplications/></ProtectedRoute>}/>
         <Route path='/projects/:id' element={<ProjectDetails/>}/>
         <Route path="/applications/:id/applicants" element={<ProtectedRoute><Applicants /></ProtectedRoute>}/>
+        <Route path="/project/:id/edit" element={<ProtectedRoute><EditProject /></ProtectedRoute>}/>
       </Routes>
     </BrowserRouter>
   )

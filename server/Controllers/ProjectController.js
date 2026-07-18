@@ -1,7 +1,7 @@
 import Project from "../Models/projectModel.js";
+import Application from "../Models/applicationModel.js";
 
 export const createProject = async(req,res) => {
-    console.log("Creating a Project...")
     try{
         const project = req.body;
         if(!project.desc || !project.title){
@@ -13,7 +13,6 @@ export const createProject = async(req,res) => {
             title:project.title,
             desc:project.desc,
         })
-        console.log("Project Posted");
         res.status(201).json(newProject);
     }catch(err){
          res.status(500).json({error: "Server Error", e:err.message});
@@ -22,7 +21,6 @@ export const createProject = async(req,res) => {
 
 //http://localhost:3000/api/projects
 export const getAllProjects = async(req,res) => {
-    console.log('Fetching All Projects');
     try{
         const projects = await Project.find().populate("creator", "name");
         res.json(projects);
@@ -33,7 +31,6 @@ export const getAllProjects = async(req,res) => {
 
 //http://localhost:3000/api/projects/:id
 export const getProjectById = async(req,res) => {
-    console.log("Fetching Project by Id");
     try{
        const project = await Project.findById(req.params.id).populate("creator","name bio");
        if(!project){
@@ -46,7 +43,6 @@ export const getProjectById = async(req,res) => {
 }
 
 export const getMyCreatedProject = async(req,res) => {
-    console.log('Fetching my own projects');
     try{
         const userId = req.user.id;
         const projects = await Project.find({
@@ -55,5 +51,54 @@ export const getMyCreatedProject = async(req,res) => {
         res.status(200).json(projects);
     }catch(err){
         res.status(500).json({error:"Server Error", e:err.message});
+    }
+}
+
+export const updateProject = async (req, res) => {
+    try {
+        const projectId = req.params.id;
+
+        // Find project
+        const project = await Project.findById(projectId);
+
+        if (!project) {
+            return res.status(404).json({ error: "Project not found!" });
+        }
+
+        // Check ownership
+        if (project.creator.toString() !== req.user.id) {
+            return res.status(403).json({ error: "You are not authorized to update this project." });
+        }
+        // Update project
+        const updatedProject = await Project.findByIdAndUpdate(
+            projectId,
+            req.body,
+            { new: true }
+        );
+
+        res.status(200).json(updatedProject);
+
+    } catch (err) {
+        res.status(500).json({
+            error: "Server Error",
+            e: err.message
+        });
+    }
+};
+
+export const deleteProject = async(req,res) => {
+    try{
+        const projectId = req.params.id;
+        const project = await Project.findById(projectId);
+        if(!project) return res.status(404).json({error:"Project Not Found"});
+        if(project.creator.toString() != req.user.id) return res.status(403).json({error:"Unauthorized Access"});
+        await Application.deleteMany({project:projectId});
+        await Project.findByIdAndDelete(projectId);
+        res.status(200).json({message:"Project Deleted Successfully"});
+    }catch (err) {
+        res.status(500).json({
+            error: "Server Error",
+            e: err.message
+        });
     }
 }

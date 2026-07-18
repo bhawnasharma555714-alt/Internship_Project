@@ -8,16 +8,12 @@ interface ProtectedRouteProps {
 
 function ProtectedRoute({children}: ProtectedRouteProps){
     const {token,loading} = useAuth();
-    console.log("Token:", token);
-    console.log("Boolean:", !!token);
     if(loading){
         return <h2>Loading...</h2>
     }
     if(!token){
-        console.log("INSIDE IF BLOCK");
         return <Navigate to='/login'/>
     }
-    console.log("RETURNING CHILDREN");
     return  <>{children}</>;
 }
 export default ProtectedRoute;

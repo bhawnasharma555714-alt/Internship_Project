@@ -4,7 +4,6 @@ import api from "../services/api";
 import type { project } from "../types/project";
 function ProjectDetails(){
     const { id } = useParams();
-    console.log(id);
     const[project,setProject] = useState<project | null>(null);
     const[error,setError] = useState("");
     useEffect(()=>{

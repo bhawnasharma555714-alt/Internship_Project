@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProject, getAllProjects, getProjectById, getMyCreatedProject } from '../Controllers/ProjectController.js';
+import { createProject, getAllProjects, getProjectById, getMyCreatedProject , updateProject, deleteProject} from '../Controllers/ProjectController.js';
 import { verifyToken } from '../Middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -16,5 +16,11 @@ router.get('/:id',getProjectById);
 //create Project : http://localhost:3000/api/projects
 router.post('/',verifyToken,createProject);
 
+//Update project: http://localhost:3000/api/projects/:id
+router.put('/:id',verifyToken,updateProject);
+
+//Delete project http://localhost:3000/api/projects/:id
+router.delete('/:id',verifyToken,deleteProject);
+ 
 
 export default router;

@@ -26,7 +26,7 @@ function Project(){
                     <h2>{project.title}</h2>
                     <p>{project.desc}</p>
                     <p>Skills : {project.requiredSkills.join(", ")}</p>
-                    <p>Members Required : {project.memberRequired}</p>
+                    <p>Members Required : {project.membersRequired}</p>
                     <button onClick={()=> navigate(`/projects/${project.id}`)}>View Details</button>
                 </div>
             ))}

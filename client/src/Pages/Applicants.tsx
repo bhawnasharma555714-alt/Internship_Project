@@ -1,51 +1,95 @@
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import api from "../services/api";
 import type { application } from "../types/application";
 import type { project } from "../types/project";
-import api from "../services/api";
 
-function Applicants(){
-    const {id} = useParams();
-    const [project,setProject] = useState<project | null>(null);
-    const [applicants,setApplicants] = useState<application[]>([]);
-    const [error,setError] = useState("");
-    const [loading,setLoading] = useState(true);
+function Application() {
+    const { id } = useParams();
 
-    useEffect(()=>{
-        getProjectApplicants();
-    },[id]);
+    const [project, setProject] = useState<project | null>(null);
+    const [applications, setApplications] = useState<application[]>([]);
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [filter,setFilter] = useState<"all" | "pending" | "accepted" | "rejected">("all");
 
-    const getProjectApplicants = async() => {
-        try{
+    useEffect(() => {
+        getProjectApplications();
+    }, [id]);
+
+    const getProjectApplications = async () => {
+        try {
             const res = await api.get(`/applications/${id}/applicants`);
             console.log(res.data);
-            setApplicants(res.data.applicants);
+
             setProject(res.data.project);
-        }catch(err:unknown){
-            setError("Failed to fetch applicants");
-        }finally{
+            setApplications(res.data.applicants);
+        } catch (err) {
+            setError("Failed to fetch applications");
+        } finally {
             setLoading(false);
         }
-    }
-    if(loading) return <h2>Loading...</h2>;
-    if (applicants.length === 0) return <h2>No Applicants for this project</h2>;
-    return(
+    };
+
+    const filteredApplications = filter === "all"? applications : applications.filter((application) => application.status === filter);
+    const updateStatus = async (
+        applicationId: string,
+        status: "accepted" | "rejected"
+    ) => {
+        try {
+            await api.patch(`/applications/${applicationId}`, {
+                status,
+            });
+
+            // Update frontend without refreshing
+            setApplications((prev) =>
+                prev.map((application) =>
+                    application.id === applicationId? { ...application, status }: application
+                )
+            );
+        } catch (err:any) {
+            setError(err.response.data.error);
+        }
+    };
+
+    if (loading) return <h2>Loading...</h2>;
+    if (error) return <h2>{error}</h2>;
+    if (applications.length === 0)
+        return <h2>No Applications for this project</h2>;
+
+    return (
         <div>
             <h1>{project?.title}</h1>
-            {error && <p>{error}</p>}
-            <h2>Applicants</h2>
-            {applicants.map((applicant)=>(
-                <div key={applicant.id}>
-                    <h3>Name : {applicant.applicant.name}</h3>
-                    <p>Match Score : {applicant.aiMatchScore}</p>
-                    <p>Strenghts : {applicant.strengths.join(", ")}</p>
-                    <p>Weak Areas : {applicant.weaknesses.join(", ")}</p>
-                    <p>Bio: {applicant.applicant.bio}</p>
-                    <p>Skills: {applicant.applicant.skills.join(", ")}</p>
+
+            <button onClick={()=>setFilter("all")}>All</button>
+            <button onClick={()=>setFilter("pending")}>Pending</button>
+            <button onClick={()=>setFilter("accepted")}>Accepted</button>
+            <button onClick={()=>setFilter("rejected")}>Rejected</button>
+
+            {filteredApplications.map((application) => (
+                <div key={application.id}>
+                    <h3>Name: {application.applicant.name}</h3>
+                    <p>Match Score: {application.aiMatchScore}</p>
+                    <p> Strengths: {application.strengths.join(", ")}</p>
+                    <p>Weak Areas: {application.weaknesses.join(", ")}</p>
+                    <p>Bio: {application.applicant.bio}</p>
+                    <p>Skills: {application.applicant.skills.join(", ")}</p>
+                    <p>Status: {application.status}</p>
+                    {application.status === "pending" && (
+                        <>
+                            <button onClick={() => updateStatus(application.id,"accepted")}>
+                                Accept
+                            </button>
+
+                            <button onClick={() => updateStatus(application.id,"rejected")}>
+                                Reject
+                            </button>
+                        </>
+                    )}
                 </div>
             ))}
-
         </div>
-    )
+    );
 }
-export default Applicants;
+
+export default Application;

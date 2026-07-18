@@ -1,6 +1,8 @@
 import { useState, type SyntheticEvent } from "react";
 import { useAuth } from "../Context/AuthContext";
 import api from "../services/api";
+import { useNavigate } from "react-router-dom";
+
 
 function Auth() {
   const {login} = useAuth();
@@ -10,6 +12,7 @@ function Auth() {
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     e.preventDefault();
@@ -37,9 +40,10 @@ function Auth() {
         // Show success message
         setError("Signup successful! Please login.");
       } else {
-        login(data.token, data.user);
+        login(data.token,data.user);
         setEmail("");
         setPassword("");
+        navigate('/');
       }
     } catch (err: any) {
         setError(err.response?.data?.error || "Something went wrong");
@@ -106,3 +110,4 @@ function Auth() {
 }
 
 export default Auth;
+

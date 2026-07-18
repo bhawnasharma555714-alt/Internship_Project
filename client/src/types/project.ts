@@ -4,6 +4,6 @@ export interface project{
     title: string;
     desc : string;
     requiredSkills: [string];
-    memberRequired: number;
+    membersRequired: number;
     creator: string;
 }
