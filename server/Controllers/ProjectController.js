@@ -32,7 +32,7 @@ export const getAllProjects = async(req,res) => {
 //http://localhost:3000/api/projects/:id
 export const getProjectById = async(req,res) => {
     try{
-       const project = await Project.findById(req.params.id).populate("creator","name bio");
+       const project = await Project.findById(req.params.id).populate("creator","name bio id");
        if(!project){
         return res.status(404).json({error:"Project not found"});
        }
@@ -44,11 +44,21 @@ export const getProjectById = async(req,res) => {
 
 export const getMyCreatedProject = async(req,res) => {
     try{
-        const userId = req.user.id;
-        const projects = await Project.find({
-            creator : userId
-        });
-        res.status(200).json(projects);
+        const projects = await Project.find({ creator: req.user.id });
+        const projectsWithCount = await Promise.all(
+            projects.map(async (project) => {
+                const applicantCount = await Application.countDocuments({
+                    project: project._id,
+                });
+
+                return {
+                    ...project.toObject(),
+                    id: project._id.toString(),
+                    applicantCount,
+                };
+            })
+        );
+        res.status(200).json(projectsWithCount);
     }catch(err){
         res.status(500).json({error:"Server Error", e:err.message});
     }
