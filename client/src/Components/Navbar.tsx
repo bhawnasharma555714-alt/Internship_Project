@@ -12,13 +12,13 @@ function Navbar(){
                             <span className="text-2xl font-bold">CollabConnect</span>
                     </Link>
                     <div className="flex items-center gap-8">
-                        <Link to='/' className="text-slate-400 hover:text-sky-500 hover:-translate-y-1 duration-100 transition-colors">Home</Link>
-                        <Link to='/projects' className="text-slate-400 hover:text-sky-500 hover:-translate-y-1 duration-100 transition-colors">Projects</Link>
+                        <Link to='/' className="text-slate-400 hover:text-sky-500  duration-100 transition-colors">Home</Link>
+                        <Link to='/projects' className="text-slate-400 hover:text-sky-500  duration-100 transition-colors">Projects</Link>
                         {user? (
                             <>
-                                <Link to='/profile' className="text-slate-400 hover:text-sky-500 hover:-translate-y-1 duration-100 transition-colors">Profile</Link>
-                                <Link to='/my-projects' className="text-slate-400 hover:text-sky-500 hover:-translate-y-1 duration-100 transition-colors">My Projects</Link>
-                                <Link to='/my-applications' className="text-slate-400 hover:text-sky-500 hover:-translate-y-1 duration-100 transition-colors">My Applications</Link>
+                                <Link to='/profile' className="text-slate-400 hover:text-sky-500  duration-100 transition-colors">Profile</Link>
+                                <Link to='/my-projects' className="text-slate-400 hover:text-sky-500  duration-100 transition-colors">My Projects</Link>
+                                <Link to='/my-applications' className="text-slate-400 hover:text-sky-500  duration-100 transition-colors">My Applications</Link>
                                 <button className="bg-sky-700 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition-colors" onClick={logout}>Logout</button>
                             </>
                         ) : (

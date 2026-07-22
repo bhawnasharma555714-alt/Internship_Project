@@ -5,5 +5,10 @@ export interface project{
     desc : string;
     requiredSkills: [string];
     membersRequired: number;
-    creator: string;
+    creator: {
+        id:string;
+        name:string;
+        bio:string
+    }
+    applicantCount: number;
 }
