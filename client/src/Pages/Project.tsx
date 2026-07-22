@@ -38,7 +38,7 @@ function Project(){
             <h1 className="text-4xl md:text-5xl font-medium text-white text-center">
                 Explore Projects
             </h1>
-
+ 
             <p className="mt-4 text-xl text-slate-400 max-w-2xl mx-auto text-center">
                 Find exciting student projects and start collaborating.
             </p>

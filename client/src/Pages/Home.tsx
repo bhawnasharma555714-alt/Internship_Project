@@ -29,10 +29,10 @@ function Home(){
     }
     return(
         <Layout>
-            <div className="grid md:grid-cols-2 items-center gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-12">
                 <div>
-                    <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">Build Projects <span className="text-sky-600">Together</span></h1>
-                    <p className="mt-6 text-xl text-slate-600 max-w-2xl mx-auto">Discover exciting student projects, connect with teammates,and build real-world experience.</p>
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl text-center font-bold text-white leading-tight">Build Projects <span className="text-sky-600">Together</span></h1>
+                    <p className="mt-6 text-0.5xl text-slate-400 md:text-xl text-center md:text-slate-500 max-w-2xl mx-auto">Discover exciting student projects, connect with teammates,and build real-world experience.</p>
                     {!user && <Link to="/login"><div className="mt-10 font-medium flex justify-center gap-4"><button className="bg-sky-700 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition-colors">Login/Signup</button></div></Link>}
                     {user && <div className="mt-10 flex justify-center gap-4">
                         <button className="bg-sky-800 font-medium text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors" onClick={()=>navigate('/projects')}>See Projects</button>
@@ -41,17 +41,17 @@ function Home(){
                 } 
                 </div>
                 <div className="flex justify-center">
-                    <video autoPlay loop muted playsInline className="w-full max-w-xl">
+                    <video autoPlay loop muted playsInline className="w-full max-w-sm md:max-w-md lg:max-w-xl mx-auto">
                     <source src={HeroVideo} type="video/webm" />
                         Your browser does not support the video tag.
                     </video>
                 </div>
             </div>
             <section className="max-w-7xl mx-auto px-6 py-15">
-                <h2 className="text-4xl font-bold text-center text-white">Why CollabConnect?</h2>
+                <h2 className="text-3xl lg:text-4xl font-bold text-center text-white">Why CollabConnect?</h2>
                 <p className="text-center text-slate-400 mt-4 max-w-2xl mx-auto">Everything you need to find teammates, collaborate on projects, and build an impressive portfolio.</p>
             </section>
-            <div className="grid md:grid-cols-3 gap-8 mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="bg-slate-800 rounded-2xl p-8 shadow  text-center flex flex-col items-center hover:-translate-y-2 hover:shadow-2xl hover:border-sky-700 transition-all duration-300 border border-slate-700">
                     <Users className="w-12 h-12 text-sky-500" />
                     <h3 className="text-xl font-semibold mt-5 text-white">Find Teammates</h3>
@@ -70,7 +70,7 @@ function Home(){
             </div>
             <section className="bg-slate-900 py-20">
                 <div className="max-w-7xl mx-auto px-6">
-                    <h2 className="text-4xl font-bold text-center text-white">Featured Projects</h2>
+                    <h2 className="text-3xl lg:text-4xl font-bold text-center text-white">Featured Projects</h2>
                     <p className="text-center text-slate-400 mt-4 max-w-2xl mx-auto">Explore exciting projects created by students and start collaborating today.</p>
                     {loading && <Loader/>}
                     {error && <Error className='h-60 w-60' error={error}/>}

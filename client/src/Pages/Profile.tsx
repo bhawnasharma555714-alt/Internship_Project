@@ -7,7 +7,6 @@ import { User,Mail,FileText,Code,Heart,User2,Pencil } from "lucide-react";
 
 function Profile() {
   const { user, updateUser } = useAuth();
-  const [name,setName] = useState(user?.name || "")
   const [bio, setBio] = useState(user?.bio || "");
   const [skills, setSkills] = useState(user?.skills?.join(", ") || "");
   const [interests, setInterests] = useState(
@@ -111,10 +110,10 @@ function Profile() {
             </div>
               <input value={user.name} disabled className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
               <input value={user.email} disabled className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
-              <textarea value={bio} onChange={(e)=>setBio(e.target.value)} placeholder="Bio" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
+              <textarea value={bio} onChange={(e)=>setBio(e.target.value)} placeholder="Bio" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
 
-              <input value={skills} onChange={(e)=>setSkills(e.target.value)} placeholder="React, Node.js, MongoDB" className="w-full bg-slate-900 p-3 rounded-lg"/>
-              <input value={interests} onChange={(e)=>setInterests(e.target.value)} placeholder="AI, Web Development" className="w-full bg-slate-900 p-3 rounded-lg"/>
+              <input value={skills} onChange={(e)=>setSkills(e.target.value)} placeholder="React, Node.js, MongoDB" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
+              <input value={interests} onChange={(e)=>setInterests(e.target.value)} placeholder="AI, Web Development" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
 
               <button type="submit" className="w-full bg-sky-500 hover:bg-sky-400 py-2 rounded-lg font-semibold">Save Changes</button>
               </form>

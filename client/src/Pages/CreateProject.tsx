@@ -1,5 +1,8 @@
 import { useState , type SyntheticEvent} from "react";
 import api from "../services/api";
+import Layout from "../Components/Layout";
+import BackButton from "../Components/BackButton";
+import { PencilLine } from "lucide-react";
 function CreateProject(){
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
@@ -25,39 +28,83 @@ function CreateProject(){
             setMessage("Failed to create Project");
         }
     };
-    return(
-        <div>
-            <h1>Create Project</h1>
-            <form onSubmit={handleSubmit}>
-                <input
-                    required
-                    placeholder="Project Title"
-                    value={title}
-                    onChange={(e)=>setTitle(e.target.value)}
-                />
-                
-                <textarea
-                    placeholder="Project Description"
-                    value={desc}
-                    onChange={(e)=>setDesc(e.target.value)}
-                />
-                <input
-                    placeholder="Skills in format [React.js, Node.js, Python]"
-                    value={skillsRequired}
-                    onChange={(e)=>setSkillsRequired((e.target.value))}
-                />
-                <input
-                    type="number"
-                    value={memberRequired}
-                    onChange={(e)=>setMembersRequired(Number(e.target.value))}
-                />
-                <button type="submit">Create</button>
-                {message && <p>{message}</p>}
-                
+    return (
+        <Layout>
+            <BackButton />
 
-            </form>
-        </div>
-    );
+            <div className="flex justify-center mt-8 mb-10">
+                <div className="w-full max-w-2xl bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-lg">
+                    <div className="flex flex-row justify-center border-b border-slate-500 pb-2 my-2">
+                        <PencilLine className="w-8 h-8 text-sky-500 mt-1"/>
+                        <h1 className="px-2 text-3xl font-bold text-white text-center mb-8">Create Project</h1>
+                    </div>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-6 mt-6">
+                        <div>
+                            <label className="block text-sky-400 font-semibold mb-2 pr-4">Project Title</label>
+                            <input required placeholder="Enter project title" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-slate-900  border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label className="block text-sky-500 font-semibold mb-2">
+                            Project Description
+                            </label>
+                            <textarea
+                            rows={4}
+                            placeholder="Describe your project..."
+                            value={desc}
+                            onChange={(e) => setDesc(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-sky-600"
+                            />
+                        </div>
+
+                        {/* Skills */}
+                        <div>
+                            <label className="block text-sky-500 font-semibold mb-2">
+                            Required Skills
+                            </label>
+                            <input
+                            placeholder="React.js, Node.js, Python"
+                            value={skillsRequired}
+                            onChange={(e) => setSkillsRequired(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                            />
+                            <p className="text-slate-400 text-sm mt-1">*Separate skills using commas.</p>
+                        </div>
+
+                        {/* Members */}
+                        <div>
+                            <label className="block text-sky-500 font-semibold mb-2">
+                            Number of Members Required
+                            </label>
+                            <input
+                            type="number"
+                            min={1}
+                            value={memberRequired}
+                            onChange={(e) => setMembersRequired(Number(e.target.value))}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                            />
+                        </div>
+
+                        {/* Submit */}
+                        <button
+                            type="submit"
+                            className="w-fit self-center mt-4 bg-sky-700 hover:bg-sky-600 text-white font-semibold px-8 py-3 rounded-lg transition duration-200 hover:scale-105"
+                        >
+                            Create Project
+                        </button>
+
+                        {message && (
+                            <p className="text-center text-green-400 font-medium">
+                            {message}
+                            </p>
+                        )}
+
+                    </form>
+                </div>
+            </div>
+        </Layout>
+        );
 }
 
 export default CreateProject;

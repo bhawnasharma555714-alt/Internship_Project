@@ -45,7 +45,7 @@ function ProjectDetails(){
                 <ArrowLeft className="text-slate-400 h-8 w-8 font-bold hover:text-slate-300"/>
                 <button className="pl-2 font-semibold text-slate-400 text-2xl hover:text-slate-300" onClick={()=> navigate(`/projects`)}>Back to Projects</button>
             </div>
-            {project && <div className="max-w-4xl mx-auto border-4 border-slate-700 mt-10 p-10 text-left rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)]">
+            {project && <div className="max-w-2xl mx-auto border-4 border-slate-700 mt-10 p-10 text-left rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)]">
                     <h2 className="text-4xl font-bold text-white">{project.title}</h2>
 
                     <section className="text-slate-300 mt-3 line-clamp-3 py-6 flex flex-col gap-6">

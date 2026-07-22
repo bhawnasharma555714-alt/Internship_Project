@@ -2,112 +2,145 @@ import { useState, type SyntheticEvent } from "react";
 import { useAuth } from "../Context/AuthContext";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
-
+import Layout from "../Components/Layout";
+import Error from "../Components/Error"
 
 function Auth() {
-  const {login} = useAuth();
-  const [isSignup, setIsSignup] = useState<boolean>(false);
-  const [name, setName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [error, setError] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const { login } = useAuth();
+
+  const [isSignup, setIsSignup] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
+  const handleSubmit = async (
+    e: SyntheticEvent<HTMLFormElement, SubmitEvent>
+  ) => {
     e.preventDefault();
 
     setError("");
     setLoading(true);
 
     const endpoint = isSignup ? "signup" : "login";
+
     const reqBody = isSignup
       ? { name, email, password }
       : { email, password };
 
     try {
-     const res = await api.post(`/auth/${endpoint}`, reqBody);
-     const data = res.data;
+      const res = await api.post(`/auth/${endpoint}`, reqBody);
+      const data = res.data;
+
       if (isSignup) {
-        // Clear form after successful signup
         setName("");
         setEmail("");
         setPassword("");
-
-        // Switch back to login page
         setIsSignup(false);
-
-        // Show success message
         setError("Signup successful! Please login.");
       } else {
-        login(data.token,data.user);
+        login(data.token, data.user);
         setEmail("");
         setPassword("");
-        navigate('/');
+        navigate("/");
       }
     } catch (err: any) {
-        setError(err.response?.data?.error || "Something went wrong");
-    }finally {
+      setError(err.response?.data?.error || "Something went wrong");
+    } finally {
       setLoading(false);
     }
   };
 
+  if(error) return <Error className="h-80 w-80" error={error}/>
+
   return (
-    <div className="auth-form">
-      <h2>{isSignup ? "Create Account" : "Login"}</h2>
+    <Layout>
+      <div className="min-h-[80vh] flex items-center justify-center px-6">
+        <div className="w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-8">
+          <h2 className="text-3xl font-bold text-center text-white">
+            {isSignup ? "Create Account" : "Welcome Back"}
+          </h2>
 
-      <form onSubmit={handleSubmit}>
-        {isSignup && (
-          <input
-            type="text"
-            placeholder="Name"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        )}
+          <p className="text-slate-400 text-center mt-2 mb-8">
+            {isSignup
+              ? "Join CollabConnect and start collaborating."
+              : "Login to continue building amazing projects."}
+          </p>
 
-        <input
-          type="email"
-          placeholder="example@abc.com"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {isSignup && (
+              <div>
+                <label className="block text-slate-300 mb-2">Name</label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John Doe"
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"
+                />
+              </div>
+            )}
 
-        <input
-          type="password"
-          placeholder="Pwd@123"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+            <div>
+              <label className="block text-slate-300 mb-2">Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@email.com"
+                className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"
+              />
+            </div>
 
-        <button type="submit" disabled={loading}>
-          {loading
-            ? "Please wait..."
-            : isSignup
-            ? "Sign Up"
-            : "Login"}
-        </button>
-      </form>
+            <div>
+              <label className="block text-slate-300 mb-2">Password</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"
+              />
+            </div>
 
-      {error && <p className="error-text">{error}</p>}
+           <div className="flex justify-center">
+             <button
+              type="submit"
+              disabled={loading}
+              className="bg-sky-700 hover:bg-sky-600 max-w-xl px-6 py-3 transition-colors text-white font-semibold py-3 rounded-lg disabled:opacity-60"
+            >
+              {loading
+                ? "Please wait..."
+                : isSignup
+                ? "Create Account"
+                : "Login"}
+            </button>
+           </div>
+          </form>
 
-      <button
-        className="link-button"
-        onClick={() => {
-          setIsSignup(!isSignup);
-          setError("");
-        }}
-      >
-        {isSignup
-          ? "Already have an account? Login"
-          : "New here? Create an account"}
-      </button>
-    </div>
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => {
+                setIsSignup(!isSignup);
+                setError("");
+              }}
+              className="text-sky-500 hover:text-sky-400 transition-colors font-medium"
+            >
+              {isSignup
+                ? "Already have an account? Login"
+                : "New here? Create an account"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Layout>
   );
 }
 
 export default Auth;
-

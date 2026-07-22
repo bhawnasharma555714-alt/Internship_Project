@@ -118,9 +118,7 @@ function MyApplications(){
                             </span>
                         </div>
 
-                        <button onClick={()=>deleteApplication(application.id)} className="mt-6 md:mt-0 px-8 py-2 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all duration-200">
-                            Delete Application
-                        </button>
+                        <button onClick={()=>deleteApplication(application.id)} className="mt-6 md:mt-0 px-8 py-2 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all duration-200">Withdraw Application</button>
 
                     </div>
 
