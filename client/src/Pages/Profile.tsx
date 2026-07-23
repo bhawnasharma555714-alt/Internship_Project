@@ -1,9 +1,10 @@
-import { useState, type SyntheticEvent } from "react";
+import { useEffect, useState, type SyntheticEvent } from "react";
 import { useAuth } from "../Context/AuthContext";
 import api from "../services/api";
 import Layout from "../Components/Layout";
 import BackButton from "../Components/BackButton";
-import { User,Mail,FileText,Code,Heart,User2,Pencil } from "lucide-react";
+import { User,Mail,FileText,Code,Heart,User2,Pencil,ShieldAlert,CircleCheck,CircleAlert} from "lucide-react";
+import { Link } from "react-router-dom";
 
 function Profile() {
   const { user, updateUser } = useAuth();
@@ -14,15 +15,18 @@ function Profile() {
   );
   const [message, setMessage] = useState("");
   const [editing,setEditing] = useState(false);
-
-  if (!user) {
-    return <h2>Please login first.</h2>;
-  }
-
+  const [isSuccess, setIsSuccess] = useState(false);
+  useEffect(()=>{
+    if (user) {
+        setBio(user.bio || "");
+        setSkills((user.skills || []).join(", "));
+        setInterests((user.interests || []).join(", "));
+    }
+  },[user]);
   const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     e.preventDefault();
     try {
-      const res = await api.put("/users/profile", {
+      const res = await api.patch("/users/profile", {
         bio,
         skills: skills
           .split(",")
@@ -35,9 +39,12 @@ function Profile() {
       });
 
       updateUser(res.data);
+      setIsSuccess(true);
       setMessage("Profile updated successfully!");
-    } catch (err: any) {
-      setMessage(err.response?.data?.error || "Failed to update profile");
+      setTimeout(() => { setMessage("");}, 2000);
+    }catch (err: any) {
+        setIsSuccess(false);
+        setMessage(err.response?.data || "Failed to update profile");
     }finally{
         setEditing(false);
         setBio("");
@@ -46,16 +53,32 @@ function Profile() {
     }
   };
 
+  if (!user) {
+    return (
+      <Layout>
+        <div className="flex flex-row gap-2 mb-2 justify-center">
+            <ShieldAlert className="w-12 h-12 mt-1 text-sky-600 hover:text-sky-500"/>
+            <h2 className="text-3xl text-center text-slate-300 font-bold pt-2">Please login first!</h2>
+        </div>
+         <p className="mt-4 text-slate-400 max-w-lg mx-auto leading-relaxed text-center">You are not authorized to visit this page please login first</p>
+        <div className="flex flex-row gap-3 mb-2 justify-center mt-6">
+            <Link to="/login" className="bg-sky-700 hover:bg-sky-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">Login/Signup</Link>
+            <Link to="/projects" className="border border-sky-600 text-sky-500 hover:bg-sky-600 hover:text-white px-6 py-3 rounded-lg font-medium transition-colors">Browse Projects</Link>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <BackButton/>
       <div className="w-full max-w-2xl mx-auto bg-slate-800 p-8 rounded-xl shadow-lg border-4 border-slate-700 hover:border-slate-600">
-        <div className="flex flex-row gap-2 mb-2 justify-center">
-            <User2 className="w-10 h-10 mt-1 text-sky-600 hover:text-sky-500"/>
-            <h1 className="text-4xl text-white font-bold text-center mb-6">My Profile</h1>
-        </div>
         {!editing && (
             <div className="space-y-4">
+              <div className="flex flex-row gap-2 mb-2 justify-center">
+                <User2 className="w-10 h-10 mt-1 text-sky-600 hover:text-sky-500"/>
+                <h1 className="text-4xl text-white font-bold text-center mb-6">My Profile</h1>
+              </div>
               <div className="border-b border-slate-600 pb-3 my-6">
                 <div className="flex flex-row gap-2 mb-2">
                   <User className="w-7 h-7 mt-1 text-sky-500"/>
@@ -104,22 +127,44 @@ function Profile() {
           )}
           {editing && (
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="flex flex-row gap-2 mb-2">
-                <Pencil className="w-7 h-6 mt-1 text-sky-600 hover:text-sky-500"/>
-                <h2 className="text-xl text-slate-200 font-semibold">Update Profile</h2>
-            </div>
-              <input value={user.name} disabled className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
-              <input value={user.email} disabled className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
-              <textarea value={bio} onChange={(e)=>setBio(e.target.value)} placeholder="Bio" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
-
-              <input value={skills} onChange={(e)=>setSkills(e.target.value)} placeholder="React, Node.js, MongoDB" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
-              <input value={interests} onChange={(e)=>setInterests(e.target.value)} placeholder="AI, Web Development" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-800 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
-
-              <button type="submit" className="w-full bg-sky-500 hover:bg-sky-400 py-2 rounded-lg font-semibold">Save Changes</button>
+              <div className="border-b border-slate-500">
+                <div className="flex flex-row gap-2 justify-center">
+                  <Pencil className="w-8 h-8 mt-1 text-sky-600 hover:text-sky-500"/>
+                  <h1 className="text-3xl text-white font-bold text-center pr-8">Update Profile</h1>
+                </div>
+                <p className="text-slate-400 font-medium text-center mt-2 mb-4">Keep your profile up to date</p>
+              </div>
+              <div className="mt-4">
+                <label className="block text-slate-300 font-semibold mb-2">Name</label>
+                <input value={user.name} disabled className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-600 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-slate-500"/>
+              </div>
+              <div className="mt-4">
+                <label className="block text-slate-300 font-semibold mb-2">Email</label>
+                <input value={user.email} disabled className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-600 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-slate-500"/>
+              </div>
+              <div className="mt-4">
+                <label className="block text-slate-300 font-semibold mb-2">Bio</label>
+                <textarea value={bio} onChange={(e)=>setBio(e.target.value)} placeholder="Bio" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
+              </div>
+              <div className="mt-4">
+                <label className="block text-slate-300 font-semibold mb-2">Skills<span className="text-slate-400 text-sm font-medium mt-1 pl-4">(Separate skills using commas.)</span></label>
+                <input value={skills} onChange={(e)=>setSkills(e.target.value)} placeholder="React, Node.js, MongoDB" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
+              </div>
+              <div className="mt-4">
+                <label className="block text-slate-300 font-semibold mb-2">Interests<span className="text-slate-400 text-sm font-medium mt-1 pl-4">(Separate skills using commas.)</span></label>
+                <input value={interests} onChange={(e)=>setInterests(e.target.value)} placeholder="AI, Web Development" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
+              </div>
+              <div className="mt-4 text-center">
+                <button type="submit" className="bg-sky-700 text-white px-7 py-3 rounded-xl hover:bg-sky-600 transition-colors font-medium">Save Changes</button>
+              </div>
               </form>
           )}
-
-          {message && (<p className="text-sky-500 text-center mt-4">{message}</p>)}
+          {(message && !editing ) && (
+            <div className="flex flex-row gap-2 mt-2 justify-center">
+              {isSuccess === true ? <CircleCheck className="w-8 h-8 mt-3 text-green-600"/> : <CircleAlert className="w-8 h-8 mt-3 text-red-600"/>}
+              <p className={`text-center mt-4 ${isSuccess ? "text-green-500" : "text-red-500"}`}>{message}</p>
+            </div>)
+          }
         </div>
     </Layout>
   );

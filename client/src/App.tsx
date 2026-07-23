@@ -13,6 +13,7 @@ import EditProject from './Pages/EditProject';
 import Applicants from './Pages/Applicants';
 
 import './app.css';
+import NotFound from './Pages/NotFound';
 
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
         <Route path='/projects/:id' element={<ProjectDetails/>}/>
         <Route path="/applications/:id/applicants" element={<ProtectedRoute><Applicants /></ProtectedRoute>}/>
         <Route path="/project/:id/edit" element={<ProtectedRoute><EditProject /></ProtectedRoute>}/>
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )

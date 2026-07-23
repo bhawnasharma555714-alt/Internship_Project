@@ -2,7 +2,7 @@ import { useState , type SyntheticEvent} from "react";
 import api from "../services/api";
 import Layout from "../Components/Layout";
 import BackButton from "../Components/BackButton";
-import { PencilLine } from "lucide-react";
+import { Pencil } from "lucide-react";
 function CreateProject(){
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
@@ -35,18 +35,18 @@ function CreateProject(){
             <div className="flex justify-center mt-8 mb-10">
                 <div className="w-full max-w-2xl bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-lg">
                     <div className="flex flex-row justify-center border-b border-slate-500 pb-2 my-2">
-                        <PencilLine className="w-8 h-8 text-sky-500 mt-1"/>
+                        <Pencil className="w-8 h-8 text-sky-500 mt-1"/>
                         <h1 className="px-2 text-3xl font-bold text-white text-center mb-8">Create Project</h1>
                     </div>
                     <form onSubmit={handleSubmit} className="flex flex-col gap-6 mt-6">
                         <div>
-                            <label className="block text-sky-400 font-semibold mb-2 pr-4">Project Title</label>
-                            <input required placeholder="Enter project title" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-slate-900  border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
+                            <label className="block text-slate-300 font-semibold mb-2 pr-4">Project Title</label>
+                            <input required placeholder="Enter project title" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-slate-900  border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
                         </div>
 
                         {/* Description */}
                         <div>
-                            <label className="block text-sky-500 font-semibold mb-2">
+                            <label className="block text-slate-300 font-semibold mb-2">
                             Project Description
                             </label>
                             <textarea
@@ -54,27 +54,24 @@ function CreateProject(){
                             placeholder="Describe your project..."
                             value={desc}
                             onChange={(e) => setDesc(e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-sky-600"
+                            className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 resize-none focus:ring-2 focus:ring-sky-600"
                             />
                         </div>
 
                         {/* Skills */}
                         <div>
-                            <label className="block text-sky-500 font-semibold mb-2">
-                            Required Skills
-                            </label>
+                            <label className="block text-slate-300 font-semibold mb-2">Required Skills<span className="text-slate-400 text-sm font-medium mt-1 pl-4">(Separate skills using commas.)</span></label>
                             <input
                             placeholder="React.js, Node.js, Python"
                             value={skillsRequired}
                             onChange={(e) => setSkillsRequired(e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                            className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
                             />
-                            <p className="text-slate-400 text-sm mt-1">*Separate skills using commas.</p>
                         </div>
 
                         {/* Members */}
                         <div>
-                            <label className="block text-sky-500 font-semibold mb-2">
+                            <label className="block text-slate-300 font-semibold mb-2">
                             Number of Members Required
                             </label>
                             <input
@@ -82,7 +79,7 @@ function CreateProject(){
                             min={1}
                             value={memberRequired}
                             onChange={(e) => setMembersRequired(Number(e.target.value))}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                            className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
                             />
                         </div>
 

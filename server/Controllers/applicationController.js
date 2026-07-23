@@ -1,35 +1,57 @@
 import Application from "../Models/applicationModel.js";
 import Project from "../Models/projectModel.js";
+import User from "../Models/userModel.js";
+import { generateAIMatch } from "../services/gemini.js";
 
-export const applyProject = async(req,res) => {
-    console.log("Applying for a Project...")
-    try{
+export const applyProject = async (req, res) => {
+    console.log("Applying for a Project...");
+
+    try {
         const projectId = req.params.id;
         const project = await Project.findById(projectId);
-        if(!project){
-            return res.status(404).json({error:"Project not found!!"});
-        }
+
+        if (!project) return res.status(404).json({error: "Project not found!!"});
         const userId = req.user.id;
         const existingApplication = await Application.findOne({
             applicant: userId,
-            project: projectId
+            project: projectId,
         });
-        if(existingApplication){
-            return res.status(400).json({
-                error:"Already applied for this project"
-            });
+
+        if (existingApplication) return res.status(400).json({error: "Already applied for this project",});
+    
+        const applicant = await User.findById(userId);
+        let aiMatchScore = null;
+        let strengths = [];
+        let weaknesses = [];
+        let aiFeedback = "";
+        try {
+            const aiResult = await generateAIMatch(applicant, project);
+            aiMatchScore = aiResult.score;
+            strengths = aiResult.strengths;
+            weaknesses = aiResult.weaknesses;
+            aiFeedback = aiResult.feedback;
+        } catch (aiError) {
+            console.error("Gemini Error:", aiError.message);
+            console.log("Application will still be created without AI analysis.");
         }
-        const newApplication = await Application.create({
-            applicant:userId,
-            project:projectId
+         const newApplication = await Application.create({
+            applicant: userId,
+            project: projectId,
+            aiMatchScore,
+            strengths,
+            weaknesses,
+            aiFeedback
         });
-        console.log("Applied for Project");
         res.status(201).json(newApplication);
 
-    }catch(err){
-         res.status(500).json({error: "Server Error", e:err.message});
+    }catch (err) {
+        console.error(err);
+        res.status(500).json({
+            error: "Server Error",
+            e: err.message,
+        });
     }
-}
+};
 
 export const getMyApplications = async(req,res) => {
     console.log("Fecthing your Applications")
@@ -56,6 +78,7 @@ export const getProjectApplicants = async(req,res) => {
         const applicants = await Application.find({
             project: projectId
         }).populate("applicant", "name bio skills")
+        
         console.log("Applicants:", applicants);
         res.status(200).json({project,applicants});
     }catch(err){    

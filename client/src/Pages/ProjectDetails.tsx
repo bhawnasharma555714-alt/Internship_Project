@@ -11,6 +11,7 @@ function ProjectDetails(){
     const[project,setProject] = useState<project | null>(null);
     const[error,setError] = useState("");
     const[loading, setLoading] = useState(true);
+    const [isApplying,setIsApplying] = useState(false);
     const[expanded,setExpanded] = useState(false);
     const navigate = useNavigate();
     useEffect(()=>{
@@ -28,6 +29,7 @@ function ProjectDetails(){
         }
     }
     const handleApply = async() => {
+        setIsApplying(true);
         try{
             await api.post(`/applications/${id}/apply`, {
                 projectId : id  
@@ -35,6 +37,8 @@ function ProjectDetails(){
             alert("Application submitted");
         }catch(err: any){
             alert(err.response?.data?.error ||"Failed to apply");
+        }finally{
+            setIsApplying(false);
         }
     }
     if(loading) return <Loader/>;
@@ -51,7 +55,7 @@ function ProjectDetails(){
                     <section className="text-slate-300 mt-3 line-clamp-3 py-6 flex flex-col gap-6">
                         <div className="max-w-3xl leading-8">
                             <div className="flex flex-row">
-                                <FileText className="w-7 h-7 mt-1 text-sky-500"/>
+                                <FileText className="w-7 h-7 mt-2 text-sky-500"/>
                                 <p className="text-slate-400 font-semibold text-xl pr-4 pl-4 py-2">DESCRIPTION</p>
                             </div>
                             <p className={expanded ? "" : "line-clamp-3"}>{project.desc}</p>
@@ -62,7 +66,7 @@ function ProjectDetails(){
                         </div>
                         <div>
                             <div className="flex flex-row">
-                                <Palette className="w-7 h-7 mt-1 text-sky-500"/>
+                                <Palette className="w-7 h-7 mt-2 text-sky-500"/>
                                 <p className="text-slate-400 font-semibold text-xl pr-4 pl-4 py-2">CREATED BY</p>
                             </div>
                             <p>{project.creator.name.toString()}</p>
@@ -71,7 +75,7 @@ function ProjectDetails(){
 
                     <section className="flex flex-col mt-2">
                         <div className="flex flex-row">
-                            <Brain className="w-7 h-7 mt-1 text-sky-500"/>
+                            <Brain className="w-7 h-7 mt-2 text-sky-500"/>
                             <p className="text-xl text-slate-400 py-2 pl-4 font-semibold">Required Skills</p>
                         </div>
                         <div className="flex flex-wrap gap-3 mt-1">
@@ -86,7 +90,7 @@ function ProjectDetails(){
                             <Users className="text-sky-500 w-7 h-7" />
                             <span className="pl-2 text-slate-400 font-medium">{project.membersRequired} Members</span>
                         </div>
-                        <button className="bg-sky-700 text-white font-medium px-8 py-2 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={handleApply}>Apply</button>
+                        <button disabled={isApplying} className="bg-sky-700 text-white font-medium px-8 py-2 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={handleApply}>{isApplying ? "Applying...":"Apply"}</button>
                     </div>
                 </div>}
         </Layout>

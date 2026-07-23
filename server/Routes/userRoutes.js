@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/profile',verifyToken, getProfile);
 
 //Update My Profile: http://locahost:3000/api/users/profile
-router.put('/profile',verifyToken,updateProfile);
+router.patch('/profile',verifyToken,updateProfile);
 
 
 export default router;

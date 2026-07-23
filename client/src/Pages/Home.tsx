@@ -47,11 +47,11 @@ function Home(){
                     </video>
                 </div>
             </div>
-            <section className="max-w-7xl mx-auto px-6 py-15">
+            <section className="max-w-7xl mx-auto px-6 my-10">
                 <h2 className="text-3xl lg:text-4xl font-bold text-center text-white">Why CollabConnect?</h2>
                 <p className="text-center text-slate-400 mt-4 max-w-2xl mx-auto">Everything you need to find teammates, collaborate on projects, and build an impressive portfolio.</p>
             </section>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div className="bg-slate-800 rounded-2xl p-8 shadow  text-center flex flex-col items-center hover:-translate-y-2 hover:shadow-2xl hover:border-sky-700 transition-all duration-300 border border-slate-700">
                     <Users className="w-12 h-12 text-sky-500" />
                     <h3 className="text-xl font-semibold mt-5 text-white">Find Teammates</h3>
@@ -75,12 +75,12 @@ function Home(){
                     {loading && <Loader/>}
                     {error && <Error className='h-60 w-60' error={error}/>}
                     {!loading && !error && (
-                        <div className="grid md:grid-cols-3 gap-8 mt-14 max-w-7xl">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 my-10">
                                 {projects.map((project) => (
                                 <div key={project.id} className="bg-slate-800 rounded-2xl shadow-lg p-6 hover:-translate-y-2  hover:border-sky-700 transition-all duration-300 border border-slate-700">
                                     <h3 className="text-2xl font-semibold text-white truncate">{project.title}</h3>
                                     <p className="text-slate-400 mt-3 line-clamp-3">{project.desc}</p>
-                                    <div className="flex flex-wrap gap-2 mt-5 justify-center">
+                                    <div className="flex flex-wrap gap-2 mt-5 justify-start md:justify-center ">
                                         {project.requiredSkills.map((skill) => (
                                             <span key={skill} className="bg-sky-100 text-center  text-sky-700 px-3 py-1 rounded-full text-sm">
                                                 {skill}

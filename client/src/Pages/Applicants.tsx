@@ -86,14 +86,14 @@ function Application() {
             <BackButton/>
             <h2 className="text-3xl font-bold text-white py-2 text-center"><span className="font-bold text-slate-300 text-3xl">Project : </span>{project?.title}</h2>
             <p className="text-slate-400 py-1 text-center">Manage and review applicants for this project.</p>
-            <div className="flex justify-center mt-6">
+            <div className="flex justify-center mt-6 mb-4">
                 <div className="relative w-full max-w-xl">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-600 w-5 h-5"/>
                     <input type="text" value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Search applicants..." className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
                 </div>
             </div>
 
-            <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-center gap-8 mt-3">
+            <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-center gap-2  mt-3">
                 <div className="flex items-center gap-3">
                     <label className="text-white font-medium whitespace-nowrap">Status :</label>
                     <div className="relative">
@@ -165,33 +165,32 @@ function Application() {
                     <div className="grid md:grid-cols-2 gap-8 mt-8">
                         <div>
                             <h3 className="text-white font-semibold mb-4">Strengths</h3>
-                            <div className="flex flex-wrap gap-3">
-                                {application.strengths.length === 0 ? (
-                                    <p className="text-slate-500 italic">AI analysis pending.</p>
-                                ) : (
-                                    application.strengths.map((strength,index)=>(
-                                        <span key={`${strength}-${index}`} className="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full font-medium">
-                                            {strength}
-                                        </span>
-                                    ))
-                                )}
-                            </div>
+                            {application.strengths.length === 0 ? (
+                                <p className="text-slate-400 italic">
+                                    AI analysis pending.
+                                </p>
+                            ) : (<div className="border-2 border-emerald-600 px-5 py-5 rounded-xl">
+                                    <ul className="list-disc list-inside space-y-2 text-slate-300">
+                                        {application.strengths.map((strength, index) => (
+                                            <li key={index}>{strength}</li>
+                                        ))}
+                                    </ul>
+                                </div>)}
                         </div>
 
                         <div>
                             <h3 className="text-white font-semibold mb-4">Areas to Improve</h3>
-
-                            <div className="flex flex-wrap gap-3">
-                                {application.weaknesses.length === 0 ? (
-                                    <p className="text-slate-500 italic">AI analysis pending.</p>
-                                ) : (
-                                    application.weaknesses.map((weakness,index)=>(
-                                        <span key={`${weakness}-${index}`} className="bg-red-500/20 text-red-400 px-4 py-2 rounded-full font-medium">
-                                            {weakness}
-                                        </span>
-                                    ))
-                                )}
-                            </div>
+                            {application.weaknesses.length === 0 ? (
+                                <p className="text-slate-400 italic">
+                                    AI analysis pending.
+                                </p>
+                            ) : (<div className="border-2 border-yellow-500 px-5 py-5 rounded-xl">
+                                    <ul className="list-disc list-inside space-y-2 text-slate-300">
+                                        {application.weaknesses.map((weakness, index) => (
+                                            <li key={index}>{weakness}</li>
+                                        ))}
+                                    </ul>
+                                </div>)}
                         </div>
 
                     </div>

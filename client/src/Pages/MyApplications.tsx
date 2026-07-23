@@ -4,13 +4,14 @@ import type{application } from "../types/application";
 import Layout from "../Components/Layout";
 import Error from "../Components/Error";
 import Loader from "../Components/Loader";
-import { Search } from "lucide-react";
+import { Search,ChevronDown, BicepsFlexed, TrendingDown } from "lucide-react";
 
 function MyApplications(){
     const [applications,setApplications] = useState<application[]>([]);
     const [error,setError] = useState("");
     const [loading,setLoading] = useState(true);
     const [search,setSearch] = useState("");
+    const [statusFilter,setStatusFilter] = useState<"all" | "pending" | "accepted" | "rejected">("all");
     useEffect(()=>{
         getMyApplications();
     },[])
@@ -36,9 +37,14 @@ function MyApplications(){
         }
     }
 
-    const displayedApplications = (search.trim() === "" ) ? applications : applications.filter((application)=>
-        application.project.title.toLowerCase().includes(search.toLowerCase())
-    );
+    const displayedApplications = applications
+        .filter((application)=>
+            application.project.title.toLowerCase().includes(search.toLowerCase())
+        )
+        .filter((application)=>{
+            if(statusFilter === "all") return true;
+            return application.status === statusFilter;
+        })
     if(loading) return <Loader/>
     if(error) return <Error className="h-80 w-80" error={error}/>
 
@@ -55,7 +61,8 @@ function MyApplications(){
             </Layout>
         );
     }
-
+    if(loading) return <Loader/>
+    if(error) return <Error error={error}/>
     return(
         <Layout>
             <h1 className="text-4xl md:text-5xl font-medium text-white text-center">My Applications</h1>
@@ -67,6 +74,18 @@ function MyApplications(){
                     <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search Application..." className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
                 </div>
             </div>
+            <div className="flex items-center justify-center mt-4">
+                <label className="text-white font-medium whitespace-nowrap pr-2">Status :</label>
+                <div className="relative">
+                    <select value={statusFilter} onChange={(e)=>setStatusFilter(e.target.value as any)} className="appearance-none w-60 px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-sky-600">
+                        <option value="all">All</option>
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"/>
+                </div>
+            </div>
 
             {displayedApplications.map((application)=>(
                 <div key={application.id} className="max-w-3xl mx-auto border-4 border-slate-700 mt-10 p-10 rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] transition-all duration-300">
@@ -74,44 +93,60 @@ function MyApplications(){
                     <h2 className="text-4xl font-bold text-white">{application.project.title}</h2>
 
                     <div className="mt-6">
-                        <div className="flex">
+                        <div className="flex gap-3">
                             <p className="text-slate-400 font-medium pr-2 py-1">AI Match Score</p>
-                            <span className="inline-block px-5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold">{application.aiMatchScore}%</span>
+                            <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 px-4 py-1 rounded-full font-bold">{application.aiMatchScore?? 0}%</span>
                         </div>
                     </div>
+                    <div className="h-full">
+                        <div className="grid md:grid-cols-2 gap-8 mt-8">
+                            <div className="mt-6">
+                                <div className="flex flex-row mb-1">
+                                    <BicepsFlexed className="w-7 h-7 mt-2 text-emerald-500"/>
+                                    <h3 className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Strengths</h3>
+                                </div>
 
-                    <div className="mt-6">
-                        <h3 className="text-white font-semibold mb-3">Strengths</h3>
-
-                        <div className="flex flex-wrap gap-3">
-                            {application.strengths.map((item,index)=>(
-                                <span
-                                    key={index}
-                                    className="bg-emerald-900/40 text-emerald-300 px-4 py-2 rounded-full">
-                                    {item}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="mt-6">
-                        <h3 className="text-lg font-semibold text-white mb-4">Areas to Improve</h3>
-
-                        <div className="flex flex-wrap gap-3">
-                            {application.weaknesses.map((weakness,index)=>(
-                                <span key={`${weakness}-${index}`} className="bg-red-500/20 text-red-400 px-5 py-2 rounded-full font-medium transition-all duration-200 hover:-translate-y-1 hover:scale-110 cursor-pointer">{weakness}</span>
-                            ))}
+                                {application.strengths.length === 0 ? (
+                                        <p className="text-slate-400 italic">
+                                            AI analysis pending.
+                                        </p>
+                                    ) : (<div className="border-2 border-emerald-600 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                                            <ul className="list-disc list-inside space-y-2 text-slate-300">
+                                                {application.strengths.map((strength, index) => (
+                                                    <li key={index}>{strength}</li>
+                                                ))}
+                                            </ul>
+                                        </div>)}
+                            </div>
+                            <div className="mt-6">
+                                <div className="flex flex-row mb-1">
+                                    <TrendingDown className="w-7 h-7 mt-2 text-amber-400"/>
+                                    <p className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Areas to Improve</p>
+                                </div>
+                                {application.weaknesses.length === 0 ? (
+                                        <p className="text-slate-400 italic">
+                                            AI analysis pending.
+                                        </p>
+                                    ) : (<div className="border-2 border-amber-400 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                                            <ul className="list-disc list-inside space-y-2 text-slate-300">
+                                                {application.weaknesses.map((weakness, index) => (
+                                                    <li key={index}>{weakness}</li>
+                                                ))}
+                                            </ul>
+                                        </div>)}
+                            </div>
                         </div>
                     </div>
 
                     <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
 
-                        <div className="flex flex-col md:flex-row items-center">
-                            <p className="text-slate-400 font-medium py-2 pr-2">Application Status : </p>
+                        <div className="flex flex-row items-center">
+                            <p className="text-slate-400 font-medium py-2 pr-2">Application Status  </p>
                             <span className={`inline-block mt-2 px-5 py-2 rounded-full font-semibold ${
                                 application.status === "accepted"
                                 ? "bg-green-500/20 text-green-400"
                                 : application.status === "pending"
-                                ? "bg-yellow-500/20 text-yellow-400"
+                                ? "bg-amber-400/20 text-yellow-400"
                                 : "bg-red-500/20 text-red-400"
                             }`}>
                                 {application.status.charAt(0).toUpperCase()+application.status.slice(1)}
