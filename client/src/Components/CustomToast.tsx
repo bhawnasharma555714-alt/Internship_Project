@@ -1,4 +1,4 @@
-import { XCircle,Info, CheckCircle } from 'lucide-react';
+import { XCircle,LoaderCircle, CheckCircle } from 'lucide-react';
 
 interface CustomToastProps {
     title: string;
@@ -18,7 +18,7 @@ function CustomToast({title,message,type,}:CustomToastProps){
             bg:"bg-red-500/10"
         },
         info:{
-            icon: <Info size={28} className='text-sky-400'/>,
+            icon: <LoaderCircle size={28} className='text-sky-400 animate-spin' style={{animationDuration: "3s"}}/>,
             border: "border-sky-500",
             bg: "bg-sky-500/10",
         },

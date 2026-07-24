@@ -2,10 +2,28 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
 import { Orbit,Menu,X } from "lucide-react";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import CustomToast from "./CustomToast";
+import { NavLink } from "react-router-dom";
 
 function Navbar(){
     const {user,logout} = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
+    const navLinkClass = ({ isActive }: { isActive: boolean }) =>`whitespace-nowrap px-4 py-2 rounded-lg transition-all duration-200 ${isActive
+            ? "bg-sky-600 text-white hover:bg-sky-500"
+            : "text-slate-300 hover:text-sky-500 hover:bg-slate-800"
+    }`;
+    const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>`block px-4 py-3 rounded-lg transition-all duration-200 ${isActive
+            ? "text-sky-500"
+            : "text-slate-300 hover:bg-slate-800 hover:text-sky-400"
+    }`;
+    const handleLogout = () => {
+        logout();
+        {menuOpen && setMenuOpen(false)};
+        toast.custom(()=>(
+            <CustomToast type="success" title="Logout Successful" message="You have been signed out successfully."/>
+        ),{duration:1500})
+    }
     return(
         <nav className="bg-slate-900 shadow-md sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-6">
@@ -17,14 +35,14 @@ function Navbar(){
                         <button className="lg:hidden text-slate-300" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X size={28} /> : <Menu size={28} />}</button>
                     </div>
                     <div className="hidden lg:flex items-center gap-8">
-                        <Link to='/' className="whitespace-nowrap text-slate-400 hover:text-sky-500  duration-100 transition-colors">Home</Link>
-                        <Link to='/projects' className="whitespace-nowrap text-slate-400 hover:text-sky-500  duration-100 transition-colors">Projects</Link>
+                        <NavLink to='/' className={navLinkClass}>Home</NavLink>
+                        <NavLink to='/projects' className={navLinkClass}>Projects</NavLink>
                         {user? (
                             <>
-                                <Link to='/profile' className="whitespace-nowrap text-slate-400 hover:text-sky-500  duration-100 transition-colors">Profile</Link>
-                                <Link to='/my-projects' className="whitespace-nowrap text-slate-400 hover:text-sky-500  duration-100 transition-colors">My Projects</Link>
-                                <Link to='/my-applications' className="whitespace-nowrap text-slate-400 hover:text-sky-500  duration-100 transition-colors">My Applications</Link>
-                                <button className="bg-sky-700 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition-colors" onClick={logout}>Logout</button>
+                                <NavLink to='/profile' className={navLinkClass}>Profile</NavLink>
+                                <NavLink to='/my-projects' className={navLinkClass}>My Projects</NavLink>
+                                <NavLink to='/my-applications' className={navLinkClass}>My Applications</NavLink>
+                                <button className="bg-sky-700 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition-colors" onClick={handleLogout}>Logout</button>
                             </>
                         ) : (
                             <Link to='/login' className="bg-sky-700 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition-colors">Login</Link>
@@ -33,17 +51,16 @@ function Navbar(){
                 </div>
                 {menuOpen && (
                     <div className="flex flex-col">
-                        <div className="md:hidden flex flex-col gap-4 pb-6">
-                            <Link to="/" className="text-slate-300 hover:text-sky-500" onClick={() => setMenuOpen(false)}>Home</Link>
-                            <Link to="/projects" className="text-slate-300 hover:text-sky-500" onClick={() => setMenuOpen(false)}>Projects</Link>
+                        <div className="lg:hidden flex flex-col gap-4 pb-6">
+                            <NavLink to="/" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>Home</NavLink>
+                            <NavLink to="/projects" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>Projects</NavLink>
 
                             {user ? (
                                 <>
-                                    <Link to="/profile" className="text-slate-300 hover:text-sky-500" onClick={() => setMenuOpen(false)}>Profile</Link>
-                                    <Link to="/my-projects" className="text-slate-300 hover:text-sky-500"onClick={() => setMenuOpen(false)}>My Projects</Link>
-                                    <Link to="/my-applications" className="text-slate-300 hover:text-sky-500" onClick={() => setMenuOpen(false)}>My Applications</Link>
-                                    <button onClick={() => { logout();
-                                                            setMenuOpen(false);}}
+                                    <NavLink to="/profile" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>Profile</NavLink>
+                                    <NavLink to="/my-projects" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>My Projects</NavLink>
+                                    <NavLink to="/my-applications" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>My Applications</NavLink>
+                                    <button onClick={handleLogout}
                                         className="bg-sky-700 hover:bg-sky-600 text-white px-4 py-2 rounded-lg w-fit">Logout
                                     </button>
                                 </>

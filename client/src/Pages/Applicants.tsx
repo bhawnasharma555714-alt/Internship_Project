@@ -8,6 +8,9 @@ import Error from "../Components/Error";
 import Loader from "../Components/Loader";
 import BackButton from "../Components/BackButton";
 import { ChevronDown, Search, Users,BicepsFlexed,TrendingDown } from "lucide-react";
+import toast from "react-hot-toast";
+import CustomToast from "../Components/CustomToast";
+
 
 function Application() {
     const { id } = useParams();
@@ -39,10 +42,17 @@ function Application() {
         applicationId: string,
         status: "accepted" | "rejected"
     ) => {
+        const toastId = toast.custom(()=>(
+          <CustomToast type="info" title="Updating Status" message="Updating Applicant status"/>
+        ),{duration:Infinity})
         try {
             await api.patch(`/applications/${applicationId}`, {
                 status,
             });
+            toast.remove(toastId);
+            toast.custom(()=>(
+                <CustomToast type="success" title={`Application ${status}`} message={`The Applicant has been ${status} for your project`}/>
+            ),{duration:1500})
 
             setApplications((prev) =>
                 prev.map((application) =>
@@ -50,7 +60,10 @@ function Application() {
                 )
             );
         } catch (err:any) {
-            setError(err.response.data.error);
+            toast.remove(toastId);
+            toast.custom(()=>(
+                <CustomToast type="error" title="Action Failed" message={err.response?.data?.error || "Unable to update the application status. Please try again."}/>
+            ),{duration:1500})
         }
     };
     const displayedApplications = applications
@@ -135,100 +148,97 @@ function Application() {
                     <div key={application.id} className="max-w-3xl mx-auto border-4 border-slate-700 mt-10 p-10 rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] transition-all duration-300">
                         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                             <div>
-                            <h2 className="text-3xl font-bold text-white">{application.applicant.name}</h2>
-                            <p className="text-slate-500 font-medium mt-2">{application.applicant.bio || "No bio added."}</p>
+                                <div className="flex gap-6 mt-4">
+                                    <h2 className="text-3xl font-bold mt-1 text-white">{application.applicant.name}</h2>
+                                    <span className={`inline-block px-5 py-3 rounded-full font-semibold ${
+                                            (application.aiMatchScore ?? 0) >= 80
+                                                ? "bg-green-500/20 text-green-400"
+                                                : (application.aiMatchScore ?? 0)
+                                                ? "bg-yellow-500/20 text-yellow-400"
+                                                : "bg-red-500/20 text-red-400"}`}>
+                                        {application.aiMatchScore ?? 0} Match%
+                                    </span>
+                                </div>
+                                <p className="text-slate-500 font-medium mt-2">{application.applicant.bio || "No bio added."}</p>
+                            </div>
                         </div>
-                        <span className={`px-6 py-2 rounded-full font-semibold ${
-                            (application.aiMatchScore ?? 0) >= 70
-                            ? "bg-green-500/20 text-green-400"
-                            : (application.aiMatchScore ?? 0) >= 50
-                            ? "bg-sky-500/20 text-sky-400"
-                            : (application.aiMatchScore ?? 0) >= 30
-                            ? "bg-yellow-500/20 text-yellow-400"
-                            : "bg-red-500/20 text-red-400"
+                        <div className="mt-8">
+                            <h3 className="text-white font-semibold mb-4">Skills</h3>
+                            <div className="flex flex-wrap gap-4">
+                                {application.applicant.skills.map((skill,index)=>(
+                                    <span key={`${skill}-${index}`} className="bg-sky-100 text-sky-900 px-5 py-2 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 cursor-pointer">
+                                        {skill}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="h-full">
+                            <div className="grid md:grid-cols-2 gap-8 mt-8">
+                                <div className="mt-6">
+                                    <div className="flex flex-row mb-1">
+                                        <BicepsFlexed className="w-7 h-7 mt-2 text-emerald-500"/>
+                                        <h3 className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Strengths</h3>
+                                    </div>
+
+                                    {application.strengths.length === 0 ? (
+                                            <p className="text-slate-400 italic">
+                                                AI analysis pending.
+                                            </p>
+                                        ) : (<div className="border-2 border-emerald-600 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                                                <ul className="list-disc list-inside space-y-2 text-slate-300">
+                                                    {application.strengths.map((strength, index) => (
+                                                        <li key={`${strength}-${index}`}>{strength}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>)}
+                                </div>
+                                <div className="mt-6">
+                                    <div className="flex flex-row mb-1">
+                                        <TrendingDown className="w-7 h-7 mt-2 text-amber-400"/>
+                                        <p className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Areas to Improve</p>
+                                    </div>
+                                    {application.weaknesses.length === 0 ? (
+                                            <p className="text-slate-400 italic">
+                                                AI analysis pending.
+                                            </p>
+                                        ) : (<div className="border-2 border-amber-400 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                                                <ul className="list-disc list-inside space-y-2 text-slate-300">
+                                                    {application.weaknesses.map((weakness, index) => (
+                                                        <li key={`${weakness}-${index}`}>{weakness}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>)}
+                                </div>
+                            </div>
+                        </div>
+                        <hr className="border-slate-600 my-8" />
+
+                        <div className="mt-8 flex flex-col md:flex-row justify-between md:items-center gap-6">
+
+                            <div className="flex items-center gap-3">
+                            <p className="text-slate-400 font-medium">Status </p>
+
+                            <span className={`px-5 py-2 rounded-full font-semibold ${
+                                application.status === "accepted"
+                                ? "bg-green-500/20 text-green-400"
+                                : application.status === "pending"
+                                ? "bg-yellow-500/20 text-yellow-400"
+                                : "bg-red-500/20 text-red-400"
                             }`}>
-                            {application.aiMatchScore ?? 0}% Match
-                        </span>
-                    </div>
-
-                    <div className="mt-8">
-                        <h3 className="text-white font-semibold mb-4">Skills</h3>
-                        <div className="flex flex-wrap gap-4">
-                            {application.applicant.skills.map((skill,index)=>(
-                                <span key={`${skill}-${index}`} className="bg-sky-100 text-sky-900 px-5 py-2 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 cursor-pointer">
-                                    {skill}
-                                </span>
-                            ))}
+                                {application.status.charAt(0).toUpperCase()+application.status.slice(1)}
+                            </span>
                         </div>
-                    </div>
 
-                    <div className="h-full">
-                        <div className="grid md:grid-cols-2 gap-8 mt-8">
-                            <div className="mt-6">
-                                <div className="flex flex-row mb-1">
-                                    <BicepsFlexed className="w-7 h-7 mt-2 text-emerald-500"/>
-                                    <h3 className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Strengths</h3>
-                                </div>
-
-                                {application.strengths.length === 0 ? (
-                                        <p className="text-slate-400 italic">
-                                            AI analysis pending.
-                                        </p>
-                                    ) : (<div className="border-2 border-emerald-600 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                                            <ul className="list-disc list-inside space-y-2 text-slate-300">
-                                                {application.strengths.map((strength, index) => (
-                                                    <li key={`${strength}-${index}`}>{strength}</li>
-                                                ))}
-                                            </ul>
-                                        </div>)}
+                        {application.status === "pending" && (
+                            <div className="flex items-center gap-3">
+                                <button onClick={()=>updateStatus(application.id,"accepted")} className=" bg-green-700 text-white font-medium px-8 py-2.5 rounded-lg hover:bg-green-600 transition-colors">Accept</button>
+                                <button onClick={()=>updateStatus(application.id,"rejected")} className="border border-red-500/40 text-red-400 font-medium px-8 py-2.5 rounded-lg hover:bg-red-600 hover:text-white hover:border-red-500 transition-colors">Reject</button>
                             </div>
-                            <div className="mt-6">
-                                <div className="flex flex-row mb-1">
-                                    <TrendingDown className="w-7 h-7 mt-2 text-amber-400"/>
-                                    <p className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Areas to Improve</p>
-                                </div>
-                                {application.weaknesses.length === 0 ? (
-                                        <p className="text-slate-400 italic">
-                                            AI analysis pending.
-                                        </p>
-                                    ) : (<div className="border-2 border-amber-400 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                                            <ul className="list-disc list-inside space-y-2 text-slate-300">
-                                                {application.weaknesses.map((weakness, index) => (
-                                                    <li key={`${weakness}-${index}`}>{weakness}</li>
-                                                ))}
-                                            </ul>
-                                        </div>)}
-                            </div>
-                        </div>
+                        )}
+
                     </div>
-                    <hr className="border-slate-600 my-8" />
-
-                    <div className="mt-8 flex flex-col md:flex-row justify-between md:items-center gap-6">
-
-                        <div className="flex items-center gap-3">
-                        <p className="text-slate-400 font-medium">Status </p>
-
-                        <span className={`px-5 py-2 rounded-full font-semibold ${
-                            application.status === "accepted"
-                            ? "bg-green-500/20 text-green-400"
-                            : application.status === "pending"
-                            ? "bg-yellow-500/20 text-yellow-400"
-                            : "bg-red-500/20 text-red-400"
-                        }`}>
-                            {application.status.charAt(0).toUpperCase()+application.status.slice(1)}
-                        </span>
-                    </div>
-
-                    {application.status === "pending" && (
-                        <div className="flex items-center gap-3">
-                            <button onClick={()=>updateStatus(application.id,"accepted")} className=" bg-green-700 text-white font-medium px-8 py-2.5 rounded-lg hover:bg-green-600 transition-colors">Accept</button>
-                            <button onClick={()=>updateStatus(application.id,"rejected")} className="border border-red-500/40 text-red-400 font-medium px-8 py-2.5 rounded-lg hover:bg-red-600 hover:text-white hover:border-red-500 transition-colors">Reject</button>
-                        </div>
-                    )}
-
-                </div>
-
-        </div>)))}
+                </div>)))}
         </Layout>
     );
 }

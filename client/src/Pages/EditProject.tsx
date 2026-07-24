@@ -4,6 +4,8 @@ import api from "../services/api";
 import Layout from "../Components/Layout";
 import BackButton from "../Components/BackButton";
 import { SquarePen } from "lucide-react";
+import toast from "react-hot-toast";
+import CustomToast from "../Components/CustomToast";
 
 function EditProject() {
     const { id } = useParams();
@@ -32,7 +34,9 @@ function EditProject() {
     };
     const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
         e.preventDefault();
-        console.log(membersRequired);
+        const toastId = toast.custom(()=>(
+          <CustomToast type="info" title="Creating Project" message="Your Project is being created"/>
+        ),{duration:Infinity})
        try {
             await api.put(`/projects/${id}`, {
                 title,
@@ -40,9 +44,16 @@ function EditProject() {
                 requiredSkills: requiredSkills.split(",").map((s) => s.trim()),
                 membersRequired,
             });
+            toast.remove(toastId);
+            toast.custom(()=>(
+                <CustomToast type="success" title="Project Updated" message="Your project has been updated successfully"/>
+                ),{duration:1500})
             navigate("/my-projects");
-        } catch {
-            setMessage("Failed to update project");
+        } catch(err:any){
+            toast.remove(toastId);
+            toast.custom(()=>(
+                <CustomToast type="error" title="Update Failed" message={err.response?.data?.error || "Unable to update the project. Please try again."}/>
+            ),{duration:1500})
         }
     };
 

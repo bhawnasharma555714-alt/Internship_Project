@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../Components/Layout";
 import Error from "../Components/Error"
 import { SmilePlus, Eye, EyeClosed } from "lucide-react";
+import toast from "react-hot-toast";
+import CustomToast from "../Components/CustomToast";
 function Auth() {
   const { login } = useAuth();
 
@@ -43,16 +45,22 @@ function Auth() {
         setIsSignup(false);
         setError("Signup successful! Please login.");
       } else {
-        login(data.token, data.user);
-        setEmail("");
-        setPassword("");
-        navigate("/");
+          login(data.token, data.user);
+          toast.custom(()=>(
+            <CustomToast type="success" title="Login Successful" message="Your have logged in successfully."/>
+          ),{duration:1500})
+          setEmail("");
+          setPassword("");
+          navigate("/");
+        }
+      } catch (err: any) {
+        setError(err.response?.data?.error || "Something went wrong");
+        toast.custom(()=>(
+          <CustomToast type="error" title="Login Failed" message="Unable to login"/>
+        ),{duration:1500})
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
   };
 
   if(error === "Something went wrong") return <Error className="h-80 w-80" error={error}/>

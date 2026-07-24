@@ -8,15 +8,19 @@ import Error from "../Components/Error";
 import Loader from "../Components/Loader";
 import toast from "react-hot-toast";
 import CustomToast from "../Components/CustomToast";
+import { useAuth } from "../Context/AuthContext";
 
 function ProjectDetails(){
     const { id } = useParams();
+    const { user } = useAuth();
     const[project,setProject] = useState<project | null>(null);
     const[error,setError] = useState("");
     const[loading, setLoading] = useState(true);
     const [isApplying,setIsApplying] = useState(false);
     const[expanded,setExpanded] = useState(false);
     const navigate = useNavigate();
+    const isOwner = project?.creator.id === user?.id;
+    console.log(isOwner);
     useEffect(()=>{
         getProject();
     },[])
@@ -33,9 +37,6 @@ function ProjectDetails(){
     }
     const handleApply = async() => {
         setIsApplying(true);
-        // toast.custom(()=>(
-        //     <CustomToast type="info" title="Application Submission" message="Your Application is being submitted"/>
-        // ))
         try{
             await api.post(`/applications/${id}/apply`, {
                 projectId : id  
@@ -59,15 +60,17 @@ function ProjectDetails(){
                 <ArrowLeft className="text-slate-400 h-8 w-8 font-bold hover:text-slate-300"/>
                 <button className="pl-2 font-semibold text-slate-400 text-2xl hover:text-slate-300" onClick={()=> navigate(`/projects`)}>Back to Projects</button>
             </div>
-            {project && <div className="max-w-2xl mx-auto border-4 border-slate-700 mt-10 p-10 text-left rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)]">
-                    <h2 className="text-4xl font-bold text-white">{project.title}</h2>
-
+                {project && <div className="max-w-2xl mx-auto border-4 border-slate-700 mt-10 p-10 text-left rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)]">
+                    <div className="flex-col">
+                        <h2 className="text-4xl font-bold text-white">{project.title}</h2>
+                        {isOwner && (<div className="inline-flex bg-green-500/20 text-green-400 mt-3 px-4 py-2 rounded-lg font-semibold">✓ Your Project</div>)}
+                    </div>
                     <section className="text-slate-300 mt-3 line-clamp-3 py-6 flex flex-col gap-6">
                         <div className="max-w-3xl leading-8">
                             <div className="flex flex-row">
                                 <FileText className="w-7 h-7 mt-2 text-sky-500"/>
                                 <p className="text-slate-400 font-semibold text-xl pr-4 pl-4 py-2">DESCRIPTION</p>
-                            </div>
+                            </div> 
                             <p className={expanded ? "" : "line-clamp-3"}>{project.desc}</p>
                             {project.desc.length > 180 && (<button onClick={() => setExpanded(!expanded)} className="mt-2 text-sky-500 hover:text-sky-400 text-sm font-medium">
                                 {expanded ? "Read Less" : "Read More"}
@@ -100,7 +103,7 @@ function ProjectDetails(){
                             <Users className="text-sky-500 w-7 h-7" />
                             <span className="pl-2 text-slate-400 font-medium">{project.membersRequired} Members</span>
                         </div>
-                        <button disabled={isApplying} className="bg-sky-700 text-white font-medium px-8 py-2 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={handleApply}>{isApplying ? "Applying...":"Apply"}</button>
+                        {isOwner? (<button className="bg-sky-700 text-white font-medium px-8 py-3 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={()=> navigate(`/applications/${project.id}/applicants`)}>View Applicants</button>) :(<button disabled={isApplying} className="bg-sky-700 text-white font-medium px-8 py-2 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={handleApply}>{isApplying ? "Applying...":"Apply"}</button>)}
                     </div>
                 </div>}
         </Layout>

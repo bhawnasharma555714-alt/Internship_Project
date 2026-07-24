@@ -7,19 +7,24 @@ import { Users } from "lucide-react";
 import Layout from "../Components/Layout";
 import Loader from "../Components/Loader";
 import Error from "../Components/Error";
+import { useAuth } from "../Context/AuthContext";
 function Project(){
+    const {user} = useAuth();
     const [projects, setProjects] = useState<project[]>([]);
     const [error,setError] = useState("");
     const [search,setSearch] = useState("");
     const [loading, setLoading] = useState(true);
+    let isOwner = false;
     useEffect(()=>{
         getProjects()
     },[]);
     const getProjects = async() => {
         try{
             const res = await api.get("/projects");
+            console.log(res.data);
             setProjects(res.data);
         }catch(err){
+            console.log(err)
             setError("Failed to load Projects!");
         }finally{
             setLoading(false);
@@ -71,32 +76,18 @@ function Project(){
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
                     {displayedProjects.map((project) => (
-                        <div
-                            key={project.id}
-                            className="bg-slate-800 rounded-2xl shadow-lg p-6 hover:-translate-y-2 hover:shadow-xl hover:border-sky-700 transition-all duration-300 border border-slate-700"
-                        >
-                            <h2 className="text-2xl font-semibold text-white truncate">
-                                {project.title}
-                            </h2>
-
-                            <p className="text-slate-300 mt-3 line-clamp-3">
-                                {project.desc}
-                            </p>
-
+                        <div key={project.id} className="bg-slate-800 rounded-2xl shadow-lg p-6 hover:-translate-y-2 hover:shadow-xl hover:border-sky-700 transition-all duration-300 border border-slate-700">
+                            <div className="flex-col">
+                                <h2 className="text-2xl font-semibold text-white truncate">{project.title}</h2>
+                                {(isOwner = project.creator.id === user?.id) && (<div className="inline-flex bg-green-500/20 text-green-400 mt-3 px-3 py-2 rounded-lg font-semibold">✓ Your Project</div>)}
+                            </div>
+                            <p className="text-slate-300 mt-3 line-clamp-3">{project.desc}</p>
                             <div className="flex flex-wrap gap-2 mt-5 p-4 justify-center">
                                 {project.requiredSkills.slice(0, 3).map((skill,index) => (
-                                    <span
-                                        key={`${skill}-${index}`}
-                                        className="bg-sky-100 text-sky-900 px-3 py-1 rounded-full text-sm whitespace-nowrap"
-                                    >
-                                        {skill}
-                                    </span>
+                                    <span key={`${skill}-${index}`} className="bg-sky-100 text-sky-900 px-3 py-1 rounded-full text-sm whitespace-nowrap">{skill}</span>
                                 ))}
-
                                 {project.requiredSkills.length > 3 && (
-                                    <span className="px-3 py-1 rounded-full bg-slate-700 text-slate-300">
-                                        +{project.requiredSkills.length - 3}
-                                    </span>
+                                    <span className="px-3 py-1 rounded-full bg-slate-700 text-slate-300">+{project.requiredSkills.length - 3}</span>
                                 )}
                             </div>
 

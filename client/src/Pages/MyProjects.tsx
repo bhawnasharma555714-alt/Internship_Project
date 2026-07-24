@@ -6,6 +6,8 @@ import Layout from "../Components/Layout";
 import Loader from "../Components/Loader";
 import Error from "../Components/Error";
 import { Users,Search,UserRoundPlus } from "lucide-react";
+import toast from "react-hot-toast";
+import CustomToast from "../Components/CustomToast";
 
 
 function MyProjects(){

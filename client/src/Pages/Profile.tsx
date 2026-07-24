@@ -3,8 +3,10 @@ import { useAuth } from "../Context/AuthContext";
 import api from "../services/api";
 import Layout from "../Components/Layout";
 import BackButton from "../Components/BackButton";
-import { User,Mail,FileText,Code,Heart,User2,Pencil,ShieldAlert,CircleCheck,CircleAlert} from "lucide-react";
+import { User,Mail,FileText,Code,Heart,User2,Pencil,ShieldAlert} from "lucide-react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import CustomToast from "../Components/CustomToast";
 
 function Profile() {
   const { user, updateUser } = useAuth();
@@ -13,9 +15,7 @@ function Profile() {
   const [interests, setInterests] = useState(
     user?.interests?.join(", ") || ""
   );
-  const [message, setMessage] = useState("");
   const [editing,setEditing] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   useEffect(()=>{
     if (user) {
         setBio(user.bio || "");
@@ -25,6 +25,9 @@ function Profile() {
   },[user]);
   const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     e.preventDefault();
+    const toastId = toast.custom(()=>(
+          <CustomToast type="info" title="Creating Project" message="Your Project is being created"/>
+        ),{duration:Infinity})
     try {
       const res = await api.patch("/users/profile", {
         bio,
@@ -37,14 +40,17 @@ function Profile() {
           .map((i) => i.trim())
           .filter(Boolean),
       });
+      toast.remove(toastId);
+      toast.custom(()=>(
+        <CustomToast type="success" title="Profile Updated" message="Your Profile has been updated successfully"/>
+      ),{duration:1800})
 
       updateUser(res.data);
-      setIsSuccess(true);
-      setMessage("Profile updated successfully!");
-      setTimeout(() => { setMessage("");}, 2000);
     }catch (err: any) {
-        setIsSuccess(false);
-        setMessage(err.response?.data || "Failed to update profile");
+        toast.remove(toastId);
+        toast.custom(()=>(
+          <CustomToast type="error" title="Update Failed" message="Unable to update your profile. Please try again."/>
+        ),{duration:1800})
     }finally{
         setEditing(false);
         setBio("");
@@ -159,12 +165,6 @@ function Profile() {
               </div>
               </form>
           )}
-          {(message && !editing ) && (
-            <div className="flex flex-row gap-2 mt-2 justify-center">
-              {isSuccess === true ? <CircleCheck className="w-8 h-8 mt-3 text-green-600"/> : <CircleAlert className="w-8 h-8 mt-3 text-red-600"/>}
-              <p className={`text-center mt-4 ${isSuccess ? "text-green-500" : "text-red-500"}`}>{message}</p>
-            </div>)
-          }
         </div>
     </Layout>
   );

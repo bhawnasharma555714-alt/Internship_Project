@@ -134,7 +134,7 @@ function MyApplications(){
 
                     <div className="mt-6">
                         <div className="flex gap-3">
-                            <p className="text-slate-400 font-medium pr-2 py-1">AI Match Score</p>
+                            <p className="text-slate-400 font-medium pr-2 mt-1 py-1">AI Match Score</p>
                             <span className={`inline-block px-5 py-2 rounded-full font-semibold ${
                                     (application.aiMatchScore ?? 0) >= 80
                                         ? "bg-green-500/20 text-green-400"

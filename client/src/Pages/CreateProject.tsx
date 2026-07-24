@@ -3,15 +3,19 @@ import api from "../services/api";
 import Layout from "../Components/Layout";
 import BackButton from "../Components/BackButton";
 import { Pencil } from "lucide-react";
+import toast from "react-hot-toast";
+import CustomToast from "../Components/CustomToast";
 function CreateProject(){
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
     const [skillsRequired, setSkillsRequired] = useState("");
     const [memberRequired, setMembersRequired] = useState(1);
-    const [message, setMessage] = useState("");
 
     const handleSubmit = async( e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
         e.preventDefault();
+        const toastId = toast.custom(()=>(
+          <CustomToast type="info" title="Creating Project" message="Your Project is being created"/>
+        ),{duration:Infinity})
         try{
             await api.post("/projects", {
                 title,
@@ -19,13 +23,19 @@ function CreateProject(){
                 skillsRequired: skillsRequired.split(","),
                 memberRequired,
             });
-            setMessage("Project created successfully!");
+            toast.remove(toastId);
+            toast.custom(()=>(
+                <CustomToast type="success" title="Project Created" message="Your project has been created successfully"/>
+                ),{duration:1500})
             setTitle("");
             setDesc("");
             setSkillsRequired("");
             setMembersRequired(1);
-        }catch(err){
-            setMessage("Failed to create Project");
+        }catch(err:any){
+            toast.remove(toastId);
+            toast.custom(()=>(
+                <CustomToast type="error" title="Project Creation Failed" message={err.response?.data?.error || "Unable to create the project. Please try again."}/>
+            ),{duration:1500})
         }
     };
     return (
@@ -90,13 +100,6 @@ function CreateProject(){
                         >
                             Create Project
                         </button>
-
-                        {message && (
-                            <p className="text-center text-green-400 font-medium">
-                            {message}
-                            </p>
-                        )}
-
                     </form>
                 </div>
             </div>
