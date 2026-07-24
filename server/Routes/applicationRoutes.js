@@ -1,5 +1,5 @@
 import express from 'express';
-import { applyProject,getMyApplications, getProjectApplicants, deleteApplication, updateApplicationStatus } from "../Controllers/applicationController.js";
+import { applyProject,getMyApplications, getProjectApplicants, deleteApplication, updateApplicationStatus,analyzeApplication } from "../Controllers/applicationController.js";
 import { verifyToken } from '../Middlewares/authMiddleware.js';
 const router = express.Router();
 
@@ -18,6 +18,8 @@ router.delete('/:id',verifyToken, deleteApplication);
 
 //Patch req-: changing status of application :  http://localhost:3000/api/applications/:id
 router.patch("/:id", verifyToken, updateApplicationStatus);
+
+router.patch("/:id/analyze", verifyToken, analyzeApplication);
 
 //here id is application id;
 export default router;

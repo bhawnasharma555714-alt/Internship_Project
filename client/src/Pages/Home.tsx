@@ -81,8 +81,8 @@ function Home(){
                                     <h3 className="text-2xl font-semibold text-white truncate">{project.title}</h3>
                                     <p className="text-slate-400 mt-3 line-clamp-3">{project.desc}</p>
                                     <div className="flex flex-wrap gap-2 mt-5 justify-start md:justify-center ">
-                                        {project.requiredSkills.map((skill) => (
-                                            <span key={skill} className="bg-sky-100 text-center  text-sky-700 px-3 py-1 rounded-full text-sm">
+                                        {project.requiredSkills.map((skill,index) => (
+                                            <span key={`${skill}-${index}`} className="bg-sky-100 text-center  text-sky-700 px-3 py-1 rounded-full text-sm">
                                                 {skill}
                                             </span>
                                         ))}

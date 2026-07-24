@@ -7,7 +7,7 @@ import Layout from "../Components/Layout";
 import Error from "../Components/Error";
 import Loader from "../Components/Loader";
 import BackButton from "../Components/BackButton";
-import { ChevronDown, Search, Users } from "lucide-react";
+import { ChevronDown, Search, Users,BicepsFlexed,TrendingDown } from "lucide-react";
 
 function Application() {
     const { id } = useParams();
@@ -162,37 +162,44 @@ function Application() {
                         </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-8 mt-8">
-                        <div>
-                            <h3 className="text-white font-semibold mb-4">Strengths</h3>
-                            {application.strengths.length === 0 ? (
-                                <p className="text-slate-400 italic">
-                                    AI analysis pending.
-                                </p>
-                            ) : (<div className="border-2 border-emerald-600 px-5 py-5 rounded-xl">
-                                    <ul className="list-disc list-inside space-y-2 text-slate-300">
-                                        {application.strengths.map((strength, index) => (
-                                            <li key={index}>{strength}</li>
-                                        ))}
-                                    </ul>
-                                </div>)}
-                        </div>
+                    <div className="h-full">
+                        <div className="grid md:grid-cols-2 gap-8 mt-8">
+                            <div className="mt-6">
+                                <div className="flex flex-row mb-1">
+                                    <BicepsFlexed className="w-7 h-7 mt-2 text-emerald-500"/>
+                                    <h3 className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Strengths</h3>
+                                </div>
 
-                        <div>
-                            <h3 className="text-white font-semibold mb-4">Areas to Improve</h3>
-                            {application.weaknesses.length === 0 ? (
-                                <p className="text-slate-400 italic">
-                                    AI analysis pending.
-                                </p>
-                            ) : (<div className="border-2 border-yellow-500 px-5 py-5 rounded-xl">
-                                    <ul className="list-disc list-inside space-y-2 text-slate-300">
-                                        {application.weaknesses.map((weakness, index) => (
-                                            <li key={index}>{weakness}</li>
-                                        ))}
-                                    </ul>
-                                </div>)}
+                                {application.strengths.length === 0 ? (
+                                        <p className="text-slate-400 italic">
+                                            AI analysis pending.
+                                        </p>
+                                    ) : (<div className="border-2 border-emerald-600 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                                            <ul className="list-disc list-inside space-y-2 text-slate-300">
+                                                {application.strengths.map((strength, index) => (
+                                                    <li key={`${strength}-${index}`}>{strength}</li>
+                                                ))}
+                                            </ul>
+                                        </div>)}
+                            </div>
+                            <div className="mt-6">
+                                <div className="flex flex-row mb-1">
+                                    <TrendingDown className="w-7 h-7 mt-2 text-amber-400"/>
+                                    <p className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Areas to Improve</p>
+                                </div>
+                                {application.weaknesses.length === 0 ? (
+                                        <p className="text-slate-400 italic">
+                                            AI analysis pending.
+                                        </p>
+                                    ) : (<div className="border-2 border-amber-400 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                                            <ul className="list-disc list-inside space-y-2 text-slate-300">
+                                                {application.weaknesses.map((weakness, index) => (
+                                                    <li key={`${weakness}-${index}`}>{weakness}</li>
+                                                ))}
+                                            </ul>
+                                        </div>)}
+                            </div>
                         </div>
-
                     </div>
                     <hr className="border-slate-600 my-8" />
 

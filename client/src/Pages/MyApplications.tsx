@@ -4,7 +4,9 @@ import type{application } from "../types/application";
 import Layout from "../Components/Layout";
 import Error from "../Components/Error";
 import Loader from "../Components/Loader";
-import { Search,ChevronDown, BicepsFlexed, TrendingDown } from "lucide-react";
+import { Search,ChevronDown, BicepsFlexed, TrendingDown,Sparkles} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import AIAnalysisLoader from "../Components/AiAnalysisLoader";
 
 function MyApplications(){
     const [applications,setApplications] = useState<application[]>([]);
@@ -12,6 +14,12 @@ function MyApplications(){
     const [loading,setLoading] = useState(true);
     const [search,setSearch] = useState("");
     const [statusFilter,setStatusFilter] = useState<"all" | "pending" | "accepted" | "rejected">("all");
+    const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+    const [showLoader, setShowLoader] = useState(false);
+    const [loaderState, setLoaderState] = useState<"loading" | "success" | "error">("loading");
+    const [loaderMessage, setLoaderMessage] = useState("");
+    const [currentApplicationId, setCurrentApplicationId] = useState("");
+    const navigate = useNavigate();
     useEffect(()=>{
         getMyApplications();
     },[])
@@ -21,6 +29,7 @@ function MyApplications(){
             const res = await api.get('/applications/my');
             setApplications(res.data);
         }catch(err:unknown){
+            console.log(err);
             setError("Failed to fetch your applications");
         }finally{
             setLoading(false);
@@ -34,12 +43,35 @@ function MyApplications(){
             setApplications((prev) => prev.filter((application)=>application.id !== id));
         }catch(err){
             alert('Failed to delete Application');
+        }finally {
+            setAnalyzingId(null);
+        }
+    }
+
+    const handleAnalyze = async(applicationId : string) => {
+        setCurrentApplicationId(applicationId);
+        setAnalyzingId(applicationId);
+        setShowLoader(true);
+        setLoaderState("loading");
+        setLoaderMessage("Analyzing your profile...");
+
+        try{
+            const response = await api.patch(`/applications/${applicationId}/analyze`);
+            setApplications(prev => prev.map(app => app.id === applicationId ? response.data : app))
+            setLoaderState("success");
+            setTimeout(() => {setShowLoader(false);}, 1000)
+        }catch(err:any){
+            setLoaderState("error");
+            setLoaderMessage(err.response?.data?.error || "Something went wrong.");
+            console.log(err);
+        }finally{
+            setAnalyzingId(null);
         }
     }
 
     const displayedApplications = applications
         .filter((application)=>
-            application.project.title.toLowerCase().includes(search.toLowerCase())
+            application.project?.title ?? "".toLowerCase().includes(search.toLowerCase())
         )
         .filter((application)=>{
             if(statusFilter === "all") return true;
@@ -48,15 +80,15 @@ function MyApplications(){
     if(loading) return <Loader/>
     if(error) return <Error className="h-80 w-80" error={error}/>
 
-    if(applications.length === 0){
+    if(displayedApplications.length === 0){
         return(
             <Layout>
                 <h1 className="text-4xl md:text-5xl font-semibold text-white text-center">My Applications</h1>
                 <p className="mt-4 text-xl text-slate-400 text-center">Track all your submitted applications</p>
 
-                <div className="text-center mt-24">
-                    <h2 className="text-3xl text-slate-400">No Applications Yet</h2>
-                    <p className="text-slate-500 mt-3 text-lg">Apply to projects and they'll appear here.</p>
+                <div className="text-center mt-12">
+                    <h2 className="text-3xl text-slate-400 font-semibold">No Applications Yet</h2>
+                    <button className="bg-sky-700 font-medium mt-4 text-white px-6 py-3 rounded-lg hover:bg-sky-600 transition-colors" onClick={()=>navigate('/projects')}>Browse Projcts</button>
                 </div>
             </Layout>
         );
@@ -65,6 +97,14 @@ function MyApplications(){
     if(error) return <Error error={error}/>
     return(
         <Layout>
+            {showLoader && (
+                <AIAnalysisLoader
+                    state={loaderState}
+                    message={loaderMessage}
+                    onClose={() => setShowLoader(false)}
+                    onRetry={() => handleAnalyze(currentApplicationId)}
+                />
+            )}
             <h1 className="text-4xl md:text-5xl font-medium text-white text-center">My Applications</h1>
             <p className="mt-4 text-xl text-slate-400 text-center">Track all your submitted applications</p>
             <p className="text-white text-center p-4">{applications.length} application{applications.length !== 1 && "s"}</p>
@@ -88,17 +128,24 @@ function MyApplications(){
             </div>
 
             {displayedApplications.map((application)=>(
-                <div key={application.id} className="max-w-3xl mx-auto border-4 border-slate-700 mt-10 p-10 rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] transition-all duration-300">
+                <div key={application.id} className="max-w-2xl lg:max-w-3xl mx-auto border-4 border-slate-700 mt-10 p-10 rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] transition-all duration-300">
 
                     <h2 className="text-4xl font-bold text-white">{application.project.title}</h2>
 
                     <div className="mt-6">
                         <div className="flex gap-3">
                             <p className="text-slate-400 font-medium pr-2 py-1">AI Match Score</p>
-                            <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 px-4 py-1 rounded-full font-bold">{application.aiMatchScore?? 0}%</span>
+                            <span className={`inline-block px-5 py-2 rounded-full font-semibold ${
+                                    (application.aiMatchScore ?? 0) >= 80
+                                        ? "bg-green-500/20 text-green-400"
+                                        : (application.aiMatchScore ?? 0)
+                                        ? "bg-yellow-500/20 text-yellow-400"
+                                        : "bg-red-500/20 text-red-400"}`}>
+                                {application.aiMatchScore ?? 0}%
+                            </span>
                         </div>
                     </div>
-                    <div className="h-full">
+                    <div className="h-full border-b border-slate-600 pb-12">
                         <div className="grid md:grid-cols-2 gap-8 mt-8">
                             <div className="mt-6">
                                 <div className="flex flex-row mb-1">
@@ -113,7 +160,7 @@ function MyApplications(){
                                     ) : (<div className="border-2 border-emerald-600 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                                             <ul className="list-disc list-inside space-y-2 text-slate-300">
                                                 {application.strengths.map((strength, index) => (
-                                                    <li key={index}>{strength}</li>
+                                                    <li key={`${strength}-${index}`}>{strength}</li>
                                                 ))}
                                             </ul>
                                         </div>)}
@@ -130,7 +177,7 @@ function MyApplications(){
                                     ) : (<div className="border-2 border-amber-400 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                                             <ul className="list-disc list-inside space-y-2 text-slate-300">
                                                 {application.weaknesses.map((weakness, index) => (
-                                                    <li key={index}>{weakness}</li>
+                                                    <li key={`${weakness}-${index}`}>{weakness}</li>
                                                 ))}
                                             </ul>
                                         </div>)}
@@ -138,7 +185,7 @@ function MyApplications(){
                         </div>
                     </div>
 
-                    <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
+                    <div className="mt-6 flex flex-col md:flex-row justify-between items-center mb-4">
 
                         <div className="flex flex-row items-center">
                             <p className="text-slate-400 font-medium py-2 pr-2">Application Status  </p>
@@ -153,10 +200,14 @@ function MyApplications(){
                             </span>
                         </div>
 
-                        <button onClick={()=>deleteApplication(application.id)} className="mt-6 md:mt-0 px-8 py-2 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all duration-200">Withdraw Application</button>
-
+                        <button onClick={()=>deleteApplication(application.id)} className="mt-6 md:mt-0 px-8 py-2 rounded-lg border border-red-500/40 font-semibold text-red-400 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all duration-200">Withdraw Application</button>
                     </div>
-
+                    {(application.aiMatchScore === null && application.status === "pending") && 
+                        <div className="flex flex-row gap-2 mt-10 justify-center md:justify-start">
+                            <Sparkles className="w-8 h-9 text-purple-700 hover:text-purple-600 mt-1"/>
+                            <button  disabled={analyzingId === application.id} className="md:mt-0 px-8 py-3 font-semibold italic rounded-lg bg-purple-800 text-white hover:bg-purple-700 transition-all duration-200" onClick={() => handleAnalyze(application.id)}>{analyzingId === application.id ? "Analyzing...":"Analyze using AI"}</button>
+                        </div>
+                    }
                 </div>
             ))}
 

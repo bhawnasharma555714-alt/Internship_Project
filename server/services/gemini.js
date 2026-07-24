@@ -41,8 +41,9 @@ export async function generateAIMatch(candidate,project) {
                     - Do NOT include explanations.
                     - Return ONLY the JSON object.
                     `;
+    console.log("About to call Gemini");
     const response = await ai.models.generateContent({
-        model: "gemini-flash-latest",
+        model: process.env.GEMINI_MODEL,
         contents: prompt,
     });
     const text = response.text;

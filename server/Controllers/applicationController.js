@@ -25,6 +25,7 @@ export const applyProject = async (req, res) => {
         let weaknesses = [];
         let aiFeedback = "";
         try {
+            console.log("Reached apply controller");
             const aiResult = await generateAIMatch(applicant, project);
             aiMatchScore = aiResult.score;
             strengths = aiResult.strengths;
@@ -60,9 +61,6 @@ export const getMyApplications = async(req,res) => {
         const  applications = await Application.find({
             applicant : userId
         }).populate("project", "title desc requiredSkills memberRequired");
-        if(applications.length === 0){
-            return res.status(404).json({error:"No Applications found"});
-        }
         res.status(200).json(applications);
     }catch(err){
          res.status(500).json({error: "Server Error", e:err.message});
@@ -145,3 +143,32 @@ export const updateApplicationStatus = async (req, res) => {
         });
     }
 };
+
+export const analyzeApplication = async (req, res) => {
+    try {
+        const applicationId = req.params.id;
+        const application = await Application.findById(applicationId);
+        if(!application) return res.status(404).json({error:"Application Not Found"})
+        const applicant = await User.findById(application.applicant);
+        const project = await Project.findById(application.project);
+        if(!applicant || !project) return res.status(404).json({error:"Application or Project Not Found"})
+        try{
+            const aiResult = await generateAIMatch(applicant, project);
+            application.aiMatchScore = aiResult.score;
+            application.strengths = aiResult.strengths;
+            application.weaknesses = aiResult.weaknesses;
+            application.aiFeedback = aiResult.feedback;
+            await application.save();
+        }catch (aiError) {
+            console.error("Gemini Error:", aiError.message);
+            return res.status(500).json({error: "AI Analysis failed. Please try again later."});
+        }
+        const updatedApplication = await Application.findById(application._id).populate("project").populate("applicant");
+        return res.status(200).json(updatedApplication);
+    } catch (err) {
+        res.status(500).json({
+            error: "Server Error",
+            e: err.message
+        });
+    }
+}

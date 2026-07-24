@@ -6,6 +6,9 @@ import Layout from "../Components/Layout";
 import { ArrowLeft,Users,FileText, Brain, Palette} from "lucide-react";
 import Error from "../Components/Error";
 import Loader from "../Components/Loader";
+import toast from "react-hot-toast";
+import CustomToast from "../Components/CustomToast";
+
 function ProjectDetails(){
     const { id } = useParams();
     const[project,setProject] = useState<project | null>(null);
@@ -30,13 +33,20 @@ function ProjectDetails(){
     }
     const handleApply = async() => {
         setIsApplying(true);
+        // toast.custom(()=>(
+        //     <CustomToast type="info" title="Application Submission" message="Your Application is being submitted"/>
+        // ))
         try{
             await api.post(`/applications/${id}/apply`, {
                 projectId : id  
             })
-            alert("Application submitted");
+            toast.custom(()=>(
+                <CustomToast type="success" title="Application Submitted" message="Your Application has been sent successfully."/>
+            ),{duration:1500})
         }catch(err: any){
-            alert(err.response?.data?.error ||"Failed to apply");
+            toast.custom(()=>(
+                <CustomToast type="error" title="Application Failed" message={err.response?.data?.error || "Failed to submit Application"}/>
+            ),{duration:1800})
         }finally{
             setIsApplying(false);
         }
