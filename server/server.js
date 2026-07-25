@@ -13,7 +13,13 @@ dotenv.config();
 const port = process.env.PORT || 3000;
 connectDb();
 let app = express();
-app.use(cors());
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        "https://internship-project-backend-8lwm.onrender.com"
+    ],
+    credentials: true,
+}));
 app.use(express.json()); //for raw json post
 app.use(express.urlencoded({extended:false})); //for x-www-form-urlencoded
 app.use(middleware);
