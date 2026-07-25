@@ -16,7 +16,7 @@ let app = express();
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://internship-project-backend-8lwm.onrender.com"
+        "https://internship-project-one-chi.vercel.app"
     ],
     credentials: true,
 }));
