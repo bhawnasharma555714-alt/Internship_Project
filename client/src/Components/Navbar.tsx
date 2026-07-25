@@ -61,11 +61,11 @@ function Navbar(){
                                     <NavLink to="/my-projects" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>My Projects</NavLink>
                                     <NavLink to="/my-applications" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>My Applications</NavLink>
                                     <button onClick={handleLogout}
-                                        className="mt-3 bg-sky-700 hover:bg-sky-600 text-white px-4 py-2 rounded-lg w-fit">Logout
+                                        className="mt-4 bg-sky-700 hover:bg-sky-600 text-white px-4 py-2 rounded-lg w-fit">Logout
                                     </button>
                                 </>
                             ) : (
-                                <Link to="/login" onClick={() => setMenuOpen(false)} className="bg-sky-700 hover:bg-sky-600 text-white px-4 py-2 rounded-lg w-fit">Login</Link>
+                                <Link to="/login" onClick={() => setMenuOpen(false)} className="mt-4 bg-sky-700 hover:bg-sky-600 text-white px-4 py-2 rounded-lg w-fit">Login</Link>
                             )}
                         </div>
                     </div>
