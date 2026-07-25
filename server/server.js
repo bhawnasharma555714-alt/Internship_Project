@@ -10,7 +10,7 @@ import userRoutes from './Routes/userRoutes.js';
 //Middlewares
 import {middleware} from './Middlewares/middleware.js';
 dotenv.config();
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
 connectDb();
 let app = express();
 app.use(cors());
