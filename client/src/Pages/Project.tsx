@@ -40,38 +40,23 @@ function Project(){
     if(error) return(<Error className="h-80 w-80" error={error}/>)
     return(
         <Layout>
-            <h1 className="text-4xl md:text-5xl font-medium text-white text-center">
-                Explore Projects
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-medium text-white text-center">Explore Projects</h1>
  
-            <p className="mt-4 text-xl text-slate-400 max-w-2xl mx-auto text-center">
-                Find exciting student projects and start collaborating.
-            </p>
+            <p className="mt-4 text-xl text-slate-400 max-w-2xl mx-auto text-center">Find exciting student projects and start collaborating.</p>
             <div className="flex justify-center mt-8">
                 <div className="relative w-full max-w-xl">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-600 w-5 h-5"/>
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search projects..."
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600"
-                    />
+                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search projects..."
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
                 </div>
             </div>
 
-            <p className="text-white text-center p-4">
-                {displayedProjects.length} project{displayedProjects.length !== 1 && "s"} found
-            </p>
+            <p className="text-white text-center p-4">{displayedProjects.length} project{displayedProjects.length !== 1 && "s"} found</p>
 
             {displayedProjects.length === 0 ? (
                 <div className="text-center">
-                    <h2 className="text-slate-400 p-4 text-3xl">
-                        No projects found
-                    </h2>
-                    <p className="text-slate-500 p-2 text-xl">
-                        Try searching with different keywords.
-                    </p>
+                    <h2 className="text-slate-400 p-4 text-3xl">No projects found</h2>
+                    <p className="text-slate-500 p-2 text-xl">Try searching with different keywords.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
@@ -94,17 +79,10 @@ function Project(){
                             <div className="mt-5 flex justify-between items-center">
                                 <div className="flex items-center text-slate-400">
                                     <Users size={20} className="text-sky-500" />
-                                    <span className="pl-2">
-                                        {project.membersRequired} Members
-                                    </span>
+                                    <span className="pl-2">{project.membersRequired} Members</span>
                                 </div>
 
-                                <Link
-                                    to={`/projects/${project.id}`}
-                                    className="text-sky-500 font-medium hover:text-sky-400"
-                                >
-                                    View Details →
-                                </Link>
+                                <Link to={`/projects/${project.id}`} className="text-sky-500 font-medium hover:text-sky-400">View Details →</Link>
                             </div>
                         </div>
                     ))}

@@ -11,7 +11,6 @@ export const verifyToken = (req,res,next) => {
     const token = authHeader.substring(7); //here end is last ele by default 
     try{
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("Decoded user:", decoded);
         req.user = decoded;
         next();
     }catch(err){

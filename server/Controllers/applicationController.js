@@ -4,8 +4,6 @@ import User from "../Models/userModel.js";
 import { generateAIMatch } from "../services/gemini.js";
 
 export const applyProject = async (req, res) => {
-    console.log("Applying for a Project...");
-
     try {
         const projectId = req.params.id;
         const project = await Project.findById(projectId);
@@ -33,7 +31,6 @@ export const applyProject = async (req, res) => {
             aiFeedback = aiResult.feedback;
         } catch (aiError) {
             console.error("Gemini Error:", aiError.message);
-            console.log("Application will still be created without AI analysis.");
         }
          const newApplication = await Application.create({
             applicant: userId,
@@ -55,7 +52,6 @@ export const applyProject = async (req, res) => {
 };
 
 export const getMyApplications = async(req,res) => {
-    console.log("Fecthing your Applications")
     try{
         const userId = req.user.id;
         const  applications = await Application.find({
@@ -68,7 +64,6 @@ export const getMyApplications = async(req,res) => {
 }
 
 export const getProjectApplicants = async(req,res) => {
-    console.log("Fetching Project Applicants");
     try{
         const projectId = req.params.id;
         console.log("Project ID:", projectId);
@@ -76,8 +71,6 @@ export const getProjectApplicants = async(req,res) => {
         const applicants = await Application.find({
             project: projectId
         }).populate("applicant", "name bio skills")
-        
-        console.log("Applicants:", applicants);
         res.status(200).json({project,applicants});
     }catch(err){    
          res.status(500).json({error: "Server Error", e:err.message});

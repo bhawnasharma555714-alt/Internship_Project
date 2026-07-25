@@ -9,11 +9,11 @@ import { NavLink } from "react-router-dom";
 function Navbar(){
     const {user,logout} = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
-    const navLinkClass = ({ isActive }: { isActive: boolean }) =>`whitespace-nowrap px-4 py-2 rounded-lg transition-all duration-200 ${isActive
-            ? "bg-sky-600 text-white hover:bg-sky-500"
-            : "text-slate-300 hover:text-sky-500 hover:bg-slate-800"
+    const navLinkClass = ({ isActive }: { isActive: boolean }) =>`whitespace-nowrap px-3 py-2 rounded-lg transition-all duration-200 ${isActive
+            ? "text-sky-400"
+            : "text-slate-300 hover:text-white"
     }`;
-    const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>`block px-4 py-3 rounded-lg transition-all duration-200 ${isActive
+    const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>`block px-4 py-2 rounded-lg transition-all duration-200 ${isActive
             ? "text-sky-500"
             : "text-slate-300 hover:bg-slate-800 hover:text-sky-400"
     }`;
@@ -34,7 +34,7 @@ function Navbar(){
                         </Link>
                         <button className="lg:hidden text-slate-300" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X size={28} /> : <Menu size={28} />}</button>
                     </div>
-                    <div className="hidden lg:flex items-center gap-8">
+                    <div className="hidden lg:flex items-center gap-2">
                         <NavLink to='/' className={navLinkClass}>Home</NavLink>
                         <NavLink to='/projects' className={navLinkClass}>Projects</NavLink>
                         {user? (
@@ -51,7 +51,7 @@ function Navbar(){
                 </div>
                 {menuOpen && (
                     <div className="flex flex-col">
-                        <div className="lg:hidden flex flex-col gap-4 pb-6">
+                        <div className="lg:hidden flex flex-col pb-3">
                             <NavLink to="/" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>Home</NavLink>
                             <NavLink to="/projects" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>Projects</NavLink>
 
@@ -61,7 +61,7 @@ function Navbar(){
                                     <NavLink to="/my-projects" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>My Projects</NavLink>
                                     <NavLink to="/my-applications" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>My Applications</NavLink>
                                     <button onClick={handleLogout}
-                                        className="bg-sky-700 hover:bg-sky-600 text-white px-4 py-2 rounded-lg w-fit">Logout
+                                        className="mt-3 bg-sky-700 hover:bg-sky-600 text-white px-4 py-2 rounded-lg w-fit">Logout
                                     </button>
                                 </>
                             ) : (

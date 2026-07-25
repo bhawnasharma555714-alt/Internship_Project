@@ -101,9 +101,7 @@ function Home(){
                         </div>
                     )}
                     <div className="text-center mt-10">
-                        <Link to="/projects" className="bg-sky-700 hover:bg-sky-600 text-white px-6 py-3 rounded-xl font-medium transition">
-                            View All Projects
-                        </Link>
+                        <Link to="/projects" className="bg-sky-700 hover:bg-sky-600 text-white px-6 py-3 rounded-xl font-medium transition">View All Projects</Link>
                    </div>
                 </div>
             </section>

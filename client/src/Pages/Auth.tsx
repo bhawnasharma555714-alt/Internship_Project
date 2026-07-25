@@ -43,7 +43,10 @@ function Auth() {
         setEmail("");
         setPassword("");
         setIsSignup(false);
-        setError("Signup successful! Please login.");
+        toast.custom(()=>(
+            <CustomToast type="success" title="Signup Successful" message="Your signup was successful. Please Login."/>
+          ),{duration:1500})
+        navigate('/login');
       } else {
           login(data.token, data.user);
           toast.custom(()=>(
@@ -148,7 +151,6 @@ function Auth() {
                 : "New here? Create an account"}
             </button>
           </div>
-          {error && <p className="text-center text-red-400 mt-4 font-semibold text-xl">{error}</p>}
         </div>
       </div>
     </Layout>

@@ -43,11 +43,11 @@ function ProjectDetails(){
             })
             toast.custom(()=>(
                 <CustomToast type="success" title="Application Submitted" message="Your Application has been sent successfully."/>
-            ),{duration:1500})
+            ),{duration:1000})
         }catch(err: any){
             toast.custom(()=>(
                 <CustomToast type="error" title="Application Failed" message={err.response?.data?.error || "Failed to submit Application"}/>
-            ),{duration:1800})
+            ),{duration:1500})
         }finally{
             setIsApplying(false);
         }

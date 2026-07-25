@@ -3,7 +3,6 @@ import Application from "../Models/applicationModel.js";
 import Project from "../Models/projectModel.js";
 
 export const getProfile = async(req,res) => {
-    console.log("Fetching Profile...");
     try{
         const userId = req.user.id;
         const userProfile = await User.findById(userId);

@@ -35,11 +35,21 @@ function MyProjects(){
     const deleteProject = async(id:string) => {
         const confirmDelete = window.confirm("Are you sure you want to delete this project?");
         if(!confirmDelete) return;
+        const toastId = toast.custom(()=>(
+                <CustomToast type="info" title="Deletion in Process" message="Your project is being deleted"/>
+            ),{duration:1200})
         try{
             await api.delete(`projects/${id}`);
             setProjects((prev)=> prev.filter((project) => project.id !== id));
-        }catch(err){
-            alert('Failed to delete project');
+            toast.remove(toastId);
+            toast.custom(()=>(
+                <CustomToast type="success" title="Project Deleted" message="Your project has been deleted successfully."/>
+            ),{duration:1200})
+        }catch(err:any){
+            toast.remove(toastId)
+            toast.custom(()=>(
+                <CustomToast type="error" title="Deletion Failed" message={err.response?.data?.error || "Failed to delete your project"}/>
+            ),{duration:1400})
         }
 
     }

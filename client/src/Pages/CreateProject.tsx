@@ -54,52 +54,25 @@ function CreateProject(){
                             <input required placeholder="Enter project title" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-slate-900  border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
                         </div>
 
-                        {/* Description */}
                         <div>
-                            <label className="block text-slate-300 font-semibold mb-2">
-                            Project Description
-                            </label>
-                            <textarea
-                            rows={4}
-                            placeholder="Describe your project..."
-                            value={desc}
-                            onChange={(e) => setDesc(e.target.value)}
-                            className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 resize-none focus:ring-2 focus:ring-sky-600"
-                            />
+                            <label className="block text-slate-300 font-semibold mb-2">Project Description</label>
+                            <textarea rows={4} placeholder="Describe your project..." value={desc} onChange={(e) => setDesc(e.target.value)}
+                                className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 resize-none focus:ring-2 focus:ring-sky-600"/>
                         </div>
 
-                        {/* Skills */}
                         <div>
                             <label className="block text-slate-300 font-semibold mb-2">Required Skills<span className="text-slate-400 text-sm font-medium mt-1 pl-4">(Separate skills using commas.)</span></label>
-                            <input
-                            placeholder="React.js, Node.js, Python"
-                            value={skillsRequired}
-                            onChange={(e) => setSkillsRequired(e.target.value)}
-                            className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
-                            />
+                            <input placeholder="React.js, Node.js, Python" value={skillsRequired} onChange={(e) => setSkillsRequired(e.target.value)}
+                                className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
                         </div>
 
-                        {/* Members */}
                         <div>
-                            <label className="block text-slate-300 font-semibold mb-2">
-                            Number of Members Required
-                            </label>
-                            <input
-                            type="number"
-                            min={1}
-                            value={memberRequired}
-                            onChange={(e) => setMembersRequired(Number(e.target.value))}
-                            className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
-                            />
+                            <label className="block text-slate-300 font-semibold mb-2">Number of Members Required</label>
+                            <input type="number" min={1} value={memberRequired} onChange={(e) => setMembersRequired(Number(e.target.value))}
+                                className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
                         </div>
 
-                        {/* Submit */}
-                        <button
-                            type="submit"
-                            className="w-fit self-center mt-4 bg-sky-700 hover:bg-sky-600 text-white font-semibold px-8 py-3 rounded-lg transition duration-200 hover:scale-105"
-                        >
-                            Create Project
-                        </button>
+                        <button type="submit" className="w-fit self-center mt-4 bg-sky-700 hover:bg-sky-600 text-white font-semibold px-8 py-3 rounded-lg transition duration-200 hover:scale-105">Create Project</button>
                     </form>
                 </div>
             </div>

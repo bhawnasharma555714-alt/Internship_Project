@@ -4,9 +4,11 @@ import type{application } from "../types/application";
 import Layout from "../Components/Layout";
 import Error from "../Components/Error";
 import Loader from "../Components/Loader";
-import { Search,ChevronDown, BicepsFlexed, TrendingDown,Sparkles} from "lucide-react";
+import { Search,ChevronDown, BicepsFlexed, TrendingDown,Sparkles,Users} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AIAnalysisLoader from "../Components/AiAnalysisLoader";
+import toast from "react-hot-toast";
+import CustomToast from "../Components/CustomToast";
 
 function MyApplications(){
     const [applications,setApplications] = useState<application[]>([]);
@@ -38,11 +40,21 @@ function MyApplications(){
     const deleteApplication = async(id:string) => {
         const confirmDelete = window.confirm("Are you sure you want to delete this Application?");
         if(!confirmDelete) return;
+        const toastId = toast.custom(
+                <CustomToast type="info" title="Withdrawing Application" message="Withdrawal in process..."/>
+            ,{duration:Infinity})
         try{
             await api.delete(`/applications/${id}`);
             setApplications((prev) => prev.filter((application)=>application.id !== id));
+            toast.remove(toastId);
+            toast.custom(
+                <CustomToast type="success" title="Application Withdrawn" message="Your application has been withdrawn successfully."/>
+            ,{duration:1200})
         }catch(err){
-            alert('Failed to delete Application');
+            toast.remove(toastId);
+            toast.custom(
+                <CustomToast type="error" title="Withdrawal Failed" message="Failed to withdraw your application. Please try again!"/>
+            ,{duration:1200})
         }finally {
             setAnalyzingId(null);
         }
@@ -79,22 +91,6 @@ function MyApplications(){
         })
     if(loading) return <Loader/>
     if(error) return <Error className="h-80 w-80" error={error}/>
-
-    if(displayedApplications.length === 0){
-        return(
-            <Layout>
-                <h1 className="text-4xl md:text-5xl font-semibold text-white text-center">My Applications</h1>
-                <p className="mt-4 text-xl text-slate-400 text-center">Track all your submitted applications</p>
-
-                <div className="text-center mt-12">
-                    <h2 className="text-3xl text-slate-400 font-semibold">No Applications Yet</h2>
-                    <button className="bg-sky-700 font-medium mt-4 text-white px-6 py-3 rounded-lg hover:bg-sky-600 transition-colors" onClick={()=>navigate('/projects')}>Browse Projcts</button>
-                </div>
-            </Layout>
-        );
-    }
-    if(loading) return <Loader/>
-    if(error) return <Error error={error}/>
     return(
         <Layout>
             {showLoader && (
@@ -126,7 +122,11 @@ function MyApplications(){
                     <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"/>
                 </div>
             </div>
-
+            <div className="w-fit mx-auto mt-4 flex items-center gap-2">
+                <Users className="text-sky-500"/>
+                <p className="text-white text-center pr-4">{displayedApplications.length} application{displayedApplications.length !== 1 && "s"} found</p>
+            </div>
+            {(displayedApplications.length === 0 && statusFilter === "all") && <div className="flex justify-center"><button className="bg-sky-700 font-medium mt-4 text-white px-6 py-3 rounded-lg hover:bg-sky-600 transition-colors" onClick={()=>navigate('/projects')}>Browse Projects</button></div>}
             {displayedApplications.map((application)=>(
                 <div key={application.id} className="max-w-2xl lg:max-w-3xl mx-auto border-4 border-slate-700 mt-10 p-10 rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] transition-all duration-300">
 

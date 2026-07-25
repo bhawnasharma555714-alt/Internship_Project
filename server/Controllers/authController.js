@@ -7,7 +7,6 @@ dotenv.config();
 
 
 export const signup = async(req, res) => {
-    console.log("SIGNUP IN PROCESS");
     try{
         const user = req.body;
         if(!user.name || !user.email || !user.password){
@@ -23,7 +22,6 @@ export const signup = async(req, res) => {
                     password:hashedPwd,
   
                 });
-                console.log("New User successfully created");
                 res.status(201).json(newUser);
             }
         }
@@ -33,7 +31,6 @@ export const signup = async(req, res) => {
 }
 
 export const login = async(req,res) => {
-    console.log("LOGIN IN PROCESS");
     try{
         const user = req.body;
         if(!user.email || !user.password){
@@ -51,7 +48,6 @@ export const login = async(req,res) => {
             process.env.JWT_SECRET,
             {expiresIn:"7d"}
         )
-        console.log("Login successfull");
         res.json({token: token, user:existingUser})
     }catch (err) {
         console.error(err);
