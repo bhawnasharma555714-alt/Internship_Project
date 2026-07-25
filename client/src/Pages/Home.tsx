@@ -73,7 +73,7 @@ function Home(){
                     <h2 className="text-3xl lg:text-4xl font-bold text-center text-white">Featured Projects</h2>
                     <p className="text-center text-slate-400 mt-4 max-w-2xl mx-auto">Explore exciting projects created by students and start collaborating today.</p>
                     {loading && <Loader/>}
-                    {error && <Error className='h-60 w-60' error={error}/>}
+                    {error && <Error className='h-40 w-40' error={error}/>}
                     {!loading && !error && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 my-10">
                                 {projects.map((project) => (

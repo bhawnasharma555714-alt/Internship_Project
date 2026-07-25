@@ -92,7 +92,7 @@ function Application() {
         .sort((a,b)=>(b.aiMatchScore ?? 0)-(a.aiMatchScore ?? 0));
 
     if (loading) return <Loader/>;
-    if (error) return <Error className="h-80 w-80" error={error}/>;
+    if (error) return <Error className="h-60 w-60 md:h-80 md:w-80 " error={error}/>;
 
     return (
         <Layout>
