@@ -64,9 +64,9 @@ function Profile() {
       <Layout>
         <div className="flex flex-row gap-2 mb-2 justify-center">
             <ShieldAlert className="w-12 h-12 mt-1 text-sky-600 hover:text-sky-500"/>
-            <h2 className="text-3xl text-center text-slate-300 font-bold pt-2">Please login first!</h2>
+            <h2 className="text-2xl md:text-3xl text-center text-slate-300 font-bold pt-2">Please login first!</h2>
         </div>
-         <p className="mt-4 text-slate-400 max-w-lg mx-auto leading-relaxed text-center">You are not authorized to visit this page please login first</p>
+         <p className="mt-2 md:mt-4 text-slate-400 max-w-lg mx-auto leading-relaxed text-center">You are not authorized to visit this page please login first</p>
         <div className="flex flex-row gap-3 mb-2 justify-center mt-6">
             <Link to="/login" className="bg-sky-700 hover:bg-sky-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">Login/Signup</Link>
             <Link to="/projects" className="border border-sky-600 text-sky-500 hover:bg-sky-600 hover:text-white px-6 py-3 rounded-lg font-medium transition-colors">Browse Projects</Link>
@@ -82,15 +82,15 @@ function Profile() {
         {!editing && (
             <div className="space-y-4">
               <div className="flex flex-row gap-2 mb-2 justify-center">
-                <User2 className="w-10 h-10 mt-1 text-sky-600 hover:text-sky-500"/>
-                <h1 className="text-4xl text-white font-bold text-center mb-6">My Profile</h1>
+                <User2 className="w-8 h-8 mt-1 text-sky-600 hover:text-sky-500"/>
+                <h1 className="text-3xl text-white font-bold text-center mb-6">My Profile</h1>
               </div>
-              <div className="border-b border-slate-600 pb-3 my-6">
-                <div className="flex flex-row gap-2 mb-2">
+              <div className="border-b border-slate-600 pb-3 my-2">
+                <div className="flex flex-row gap-1 mb-2">
                   <User className="w-7 h-7 mt-1 text-sky-500"/>
-                  <h2 className="text-2xl pl-2 font-semibold text-slate-300">{user.name}</h2>
+                  <h2 className="text-xl md:text-2xl pl-2 font-semibold text-slate-300">{user.name}</h2>
                 </div>
-                <div className="flex flex-row gap-2 mb-1 mt-3">
+                <div className="flex flex-row gap-2 mb-1 mt-1 md:mt-2">
                   <Mail className="w-5 h-5 mt-1 text-sky-500"/>
                   <p className="pl-2 text-slate-400 font-medium">{user.email}</p>
                 </div>
@@ -108,9 +108,9 @@ function Profile() {
                   <Code className="w-6 h-5 mt-1 text-sky-500"/>
                   <h3 className="text-lg font-semibold text-sky-500">Skills</h3>
                 </div>
-                <div className="flex flex-wrap gap-3 mt-2">
+                <div className="flex flex-wrap gap-2 md:gap-3 mt-2">
                     {user.skills.map((skill,index) => (
-                      <span key={`${skill}-${index}`} className="bg-sky-100 text-sky-900 px-4 py-1.5 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:cursor-pointer">{skill}</span>
+                      <span key={`${skill}-${index}`} className="bg-sky-100 text-sky-900 px-3.5 py-1.5 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:cursor-pointer">{skill}</span>
                      ))}
                  </div>
               </div>

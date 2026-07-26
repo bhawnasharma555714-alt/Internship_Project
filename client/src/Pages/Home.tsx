@@ -75,9 +75,10 @@ function Home(){
             {loading && <Loader/>}
             {error && <Error className='h-40 w-40' error={error}/>}
             {!loading && !error && (
+                <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
                         {projects.map((project) => (
-                        <div key={project.id} className="bg-slate-800 rounded-2xl shadow-lg p-6 hover:-translate-y-2  hover:border-sky-700 transition-all duration-300 border border-slate-700">
+                        <div key={project.id} className="bg-slate-800 rounded-2xl shadow-lg p-6 hover:-translate-y-2 hover:border-sky-700 transition-all duration-300 border border-slate-700   ">
                             <h3 className="text-2xl font-semibold text-white truncate">{project.title}</h3>
                             <p className="text-slate-400 mt-3 line-clamp-3">{project.desc}</p>
                             <div className="flex flex-wrap gap-2 mt-5 justify-start md:justify-center ">
@@ -96,12 +97,12 @@ function Home(){
                                     View Details→
                                 </Link>
                             </div>
-                        </div>
-                    ))}
-                    <div className="flex flex-row justify-center items-center mt-6">
+                        </div>))}
+                    </div>
+                    <div className="flex flex-row justify-center items-center mt-4">
                         <Link to="/projects" className="bg-sky-700 hover:bg-sky-600 text-white px-6 py-3 rounded-xl font-medium transition">View All Projects</Link>
                     </div>
-                </div>
+                </>
             )}
         </Layout>
     );
