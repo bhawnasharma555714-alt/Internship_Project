@@ -135,9 +135,9 @@ function Profile() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="border-b border-slate-500">
                 
-                <div className="flex flex-row gap-2 justify-center">
+                <div className="flex flex-row gap-1 md:gap-2 justify-center">
                   <Pencil className="w-8 h-8 mt-1 text-sky-600 hover:text-sky-500"/>
-                  <h1 className="text-3xl text-white font-bold text-center pr-8">Update Profile</h1>
+                  <h1 className="text-2xl md:text-3xl text-white font-bold text-center pr-8">Update Profile</h1>
                 </div>
                 <p className="text-slate-400 font-medium text-center mt-2 mb-4">Keep your profile up to date</p>
 
@@ -150,12 +150,12 @@ function Profile() {
 
               <div className="mt-4">
                 <label className="block text-slate-300 font-semibold mb-2">Email</label>
-                <input value={user.email} disabled className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-600 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-slate-500"/>
+                <input value={user.email} disabled className="w-full pl-8 md:pl-10 pr-4 py-3 rounded-xl border-2 border-slate-600 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-slate-500"/>
               </div>
 
               <div className="mt-4">
                 <label className="block text-slate-300 font-semibold mb-2">Bio</label>
-                <textarea value={bio} onChange={(e)=>setBio(e.target.value)} placeholder="Bio" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
+                <textarea value={bio} onChange={(e)=>setBio(e.target.value)} placeholder="Bio" className="w-full pl-8 md:pl-10 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
               </div>
 
               <div className="mt-4">
@@ -164,7 +164,7 @@ function Profile() {
               </div>
 
               <div className="mt-4">
-                <label className="block text-slate-300 font-semibold mb-2">Interests<span className="text-slate-400 text-sm font-medium mt-1 pl-4">(Separate skills using commas.)</span></label>
+                <label className="block text-slate-300 font-semibold mb-2">Interests<span className="text-slate-400 text-sm font-medium mt-1 pl-4">(Separate interests using commas.)</span></label>
                 <input value={interests} onChange={(e)=>setInterests(e.target.value)} placeholder="AI, Web Development" className="w-full pl-12 pr-4 py-3 rounded-xl border border-sky-700 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 hover:border-sky-600"/>
               </div>
 

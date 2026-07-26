@@ -98,7 +98,7 @@ function ProjectDetails(){
                         </div>
                     </section>
                     
-                    <div className="mt-6 flex justify-between items-center">
+                    <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
                         <div className="mt-6 flex items-center">
                             <Users className="text-sky-500 w-6 h-6 md:w-7 md:h-7" />
                             <span className="pl-1 md:pl-2 text-slate-400 font-medium">{project.membersRequired} Members</span>
