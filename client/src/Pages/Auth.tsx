@@ -74,8 +74,8 @@ function Auth() {
         <div className="w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-8">
           <div className="border-b border-slate-500 mb-4">
             <div className="flex flex-row justify-center my-2">
-              <SmilePlus className="w-8 h-8 text-sky-500 mt-1"/>
-              <h2 className="text-2xl md:text-3xl pl-2 pr-4 font-bold text-center text-white">{isSignup ? "Create Account" : "Welcome Back"}</h2>
+              <SmilePlus className="w-7 h-7 md:w-8 md:h-8 text-sky-500 mt-1"/>
+              <h2 className="text-2xl md:text-3xl pl-2 md:pr-4 font-bold text-center text-white">{isSignup ? "Create Account" : "Welcome Back"}</h2>
             </div>
             <p className="text-slate-400 font-medium text:sm text-center mt-2 mb-3">{isSignup? "Join CollabConnect and start collaborating.": "Login to continue building amazing projects."}</p>
           </div>
