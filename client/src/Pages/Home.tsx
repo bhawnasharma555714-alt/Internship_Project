@@ -68,7 +68,7 @@ function Home(){
                     <p className="text-slate-400 mt-3">Receive AI-powered recommendations and personalized project feedback.</p>
                 </div>
             </div>
-            <section className="bg-slate-900 py-12">
+            <section className="bg-slate-900 py-18">
                 <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center text-white">Featured Projects</h2>
                 <p className="text-center text-slate-400 mt-4 max-w-2xl mx-auto">Explore exciting projects created by students and start collaborating today.</p>
             </section>
@@ -88,7 +88,7 @@ function Home(){
                                         </span>
                                     ))}
                                 </div>
-                                <div className="mt-5 flex-col md:flex-row justify-between items-center">
+                                <div className="mt-5 flex-row justify-between items-center">
                                     <span className="text-slate-400"><div className="flex flex-row md:justify-center mb-2">
                                         <Users size={24} className="text-sky-500" />
                                         <p className="pl-2">{project.membersRequired} Members</p>
