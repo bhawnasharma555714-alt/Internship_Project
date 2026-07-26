@@ -75,7 +75,7 @@ function Auth() {
           <div className="border-b border-slate-500 mb-4">
             <div className="flex flex-row justify-center my-2">
               <SmilePlus className="w-8 h-8 text-sky-500 mt-1"/>
-              <h2 className="text-3xl pl-2 pr-4 font-bold text-center text-white">{isSignup ? "Create Account" : "Welcome Back"}</h2>
+              <h2 className="text-2xl md:text-3xl pl-2 pr-4 font-bold text-center text-white">{isSignup ? "Create Account" : "Welcome Back"}</h2>
             </div>
             <p className="text-slate-400 font-medium text:sm text-center mt-2 mb-3">{isSignup? "Join CollabConnect and start collaborating.": "Login to continue building amazing projects."}</p>
           </div>
@@ -138,13 +138,13 @@ function Auth() {
            </div>
           </form>
 
-          <div className="mt-8 text-center">
+          <div className="mt-4 text-center">
             <button
               onClick={() => {
                 setIsSignup(!isSignup);
                 setError("");
               }}
-              className="text-sky-500 hover:text-sky-400 transition-colors font-medium"
+              className="text-sky-500 text-sm hover:text-sky-400 transition-colors font-medium"
             >
               {isSignup
                 ? "Already have an account? Login"
