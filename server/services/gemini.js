@@ -2,13 +2,15 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { GoogleGenAI } from "@google/genai";
-
+console.log("Key exists:", !!process.env.GEMINI_API_KEY);
+console.log("Using model:", process.env.GEMINI_MODEL);
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
 });
 
 export async function generateAIMatch(candidate,project) {
+
     const prompt = `
                     You are an AI recruitment assistant.
 
