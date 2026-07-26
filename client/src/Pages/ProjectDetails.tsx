@@ -53,7 +53,7 @@ function ProjectDetails(){
         }
     }
     if(loading) return <Loader/>;
-    if(error) return <Error className="h-60 w-60 md:h-80 md:w-80" error={error}/>
+    if(error) return <Error className="h-50 w-50 md:h-80 md:w-80" error={error}/>
     return(
         <Layout>
             <div className="flex items-center">
@@ -62,7 +62,7 @@ function ProjectDetails(){
             </div>
                 {project && <div className="max-w-2xl mx-auto border-4 border-slate-700 mt-10 p-10 text-left rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)]">
                     <div className="flex-col">
-                        <h2 className="text-4xl font-bold text-white">{project.title}</h2>
+                        <h2 className="text-2xl md:text-4xl font-bold text-white">{project.title}</h2>
                         {isOwner && (<div className="inline-flex bg-green-500/20 text-green-400 mt-3 px-4 py-2 rounded-lg font-semibold">✓ Your Project</div>)}
                     </div>
                     <section className="text-slate-300 mt-3 line-clamp-3 py-6 flex flex-col gap-6">
@@ -86,24 +86,24 @@ function ProjectDetails(){
                         </div>
                     </section>
 
-                    <section className="flex flex-col mt-2">
+                    <section className="flex flex-col">
                         <div className="flex flex-row">
                             <Brain className="w-7 h-7 mt-2 text-sky-500"/>
                             <p className="text-xl text-slate-400 py-2 pl-4 font-semibold">Required Skills</p>
                         </div>
                         <div className="flex flex-wrap gap-3 mt-1">
                             {project.requiredSkills.map((skill,index) => (
-                                <span key={`${skill}-${index}`} className="bg-sky-100 text-sky-900 px-5 py-2 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:cursor-pointer">{skill}</span>
+                                <span key={`${skill}-${index}`} className="bg-sky-100 text-sky-900 px-3.5 md:px-5 py-2 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:cursor-pointer">{skill}</span>
                             ))}
                         </div>
                     </section>
                     
                     <div className="mt-6 flex justify-between items-center">
                         <div className="mt-6 flex items-center">
-                            <Users className="text-sky-500 w-7 h-7" />
-                            <span className="pl-2 text-slate-400 font-medium">{project.membersRequired} Members</span>
+                            <Users className="text-sky-500 w-6 h-6 md:w-7 md:h-7" />
+                            <span className="pl-1 md:pl-2 text-slate-400 font-medium">{project.membersRequired} Members</span>
                         </div>
-                        {isOwner? (<button className="bg-sky-700 text-white font-medium px-8 py-3 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={()=> navigate(`/applications/${project.id}/applicants`)}>View Applicants</button>) :(<button disabled={isApplying} className="bg-sky-700 text-white font-medium px-8 py-2 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={handleApply}>{isApplying ? "Applying...":"Apply"}</button>)}
+                        {isOwner? (<button className="bg-sky-700 text-white font-medium px-4 md:px-8 py-2 md:py-3 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={()=> navigate(`/applications/${project.id}/applicants`)}>View Applicants</button>) :(<button disabled={isApplying} className="bg-sky-700 text-white font-medium px-8 py-2 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={handleApply}>{isApplying ? "Applying...":"Apply"}</button>)}
                     </div>
                 </div>}
         </Layout>

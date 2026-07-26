@@ -90,7 +90,7 @@ function MyApplications(){
             return application.status === statusFilter;
         })
     if(loading) return <Loader/>
-    if(error) return <Error className="h-60 w-60 md:h-80 md:w-80" error={error}/>
+    if(error) return <Error className="h-50 w-50 md:h-80 md:w-80" error={error}/>
     return(
         <Layout>
             {showLoader && (
@@ -130,9 +130,9 @@ function MyApplications(){
             {displayedApplications.map((application)=>(
                 <div key={application.id} className="max-w-2xl lg:max-w-3xl mx-auto border-4 border-slate-700 mt-10 p-10 rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] transition-all duration-300">
 
-                    <h2 className="text-4xl font-bold text-white">{application.project.title}</h2>
+                    <h2 className="text-2xl md:text-4xl font-bold text-white">{application.project.title}</h2>
 
-                    <div className="mt-6">
+                    <div className="mt-2 md:mt-6">
                         <div className="flex gap-3">
                             <p className="text-slate-400 font-medium pr-2 mt-1 py-1">AI Match Score</p>
                             <span className={`inline-block px-5 py-2 rounded-full font-semibold ${
@@ -145,9 +145,9 @@ function MyApplications(){
                             </span>
                         </div>
                     </div>
-                    <div className="h-full border-b border-slate-600 pb-12">
-                        <div className="grid md:grid-cols-2 gap-8 mt-8">
-                            <div className="mt-6">
+                    <div className="h-full border-b border-slate-600 pb-8 md:pb-12">
+                        <div className="grid md:grid-cols-2 gap-2 md:gap-6 mt-2 md:mt-6">
+                            <div className="mt-2 md:mt-4">
                                 <div className="flex flex-row mb-1">
                                     <BicepsFlexed className="w-7 h-7 mt-2 text-emerald-500"/>
                                     <h3 className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Strengths</h3>
@@ -165,7 +165,7 @@ function MyApplications(){
                                             </ul>
                                         </div>)}
                             </div>
-                            <div className="mt-6">
+                            <div className="mt-2 md:mt-4">
                                 <div className="flex flex-row mb-1">
                                     <TrendingDown className="w-7 h-7 mt-2 text-amber-400"/>
                                     <p className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Areas to Improve</p>

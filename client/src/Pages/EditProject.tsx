@@ -64,8 +64,8 @@ function EditProject() {
         <div className="flex justify-center mt-8 mb-10 p-4">
             <div className="w-full max-w-2xl bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-lg">
                 <div className="flex justify-center items-center border-b border-slate-500 mb-8 pb-8">
-                    <SquarePen className="w-8 h-8 text-sky-500 mr-2" />
-                    <h1 className="text-3xl font-bold text-white">Edit Project</h1>
+                    <SquarePen className="w-7 h-7 md:w-8 md:h-8 text-sky-500 mr-2" />
+                    <h1 className="text-2xl md:text-3xl font-bold text-white">Edit Project</h1>
                 </div>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                     <div>

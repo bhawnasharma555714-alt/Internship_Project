@@ -44,9 +44,9 @@ function CreateProject(){
 
             <div className="flex justify-center mt-8 mb-10">
                 <div className="w-full max-w-2xl bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-lg">
-                    <div className="flex flex-row justify-center border-b border-slate-500 pb-2 my-2">
+                    <div className="flex flex-row justify-center border-b border-slate-500 pb-1  md:pb-2 my-2">
                         <Pencil className="w-8 h-8 text-sky-500 mt-1"/>
-                        <h1 className="px-2 text-3xl font-bold text-white text-center mb-8">Create Project</h1>
+                        <h1 className="px-2 text-2xl md:text-3xl font-bold text-white text-center mb-8">Create Project</h1>
                     </div>
                     <form onSubmit={handleSubmit} className="flex flex-col gap-6 mt-6">
                         <div>
@@ -56,7 +56,7 @@ function CreateProject(){
 
                         <div>
                             <label className="block text-slate-300 font-semibold mb-2">Project Description</label>
-                            <textarea rows={4} placeholder="Describe your project..." value={desc} onChange={(e) => setDesc(e.target.value)}
+                            <textarea rows={3} placeholder="Describe your project..." value={desc} onChange={(e) => setDesc(e.target.value)}
                                 className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 resize-none focus:ring-2 focus:ring-sky-600"/>
                         </div>
 
