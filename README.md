@@ -1,6 +1,6 @@
 # 🚀 CollabConnect
 
-An AI-powered MERN platform that helps students discover, apply for, and collaborate on projects. CollabConnect streamlines project recruitment by allowing project owners to post opportunities, applicants to showcase their skills, and AI to provide intelligent application analysis.
+An AI-powered MERN platform that helps students discover, apply for, and collaborate on projects. **CollabConnect** streamlines project recruitment by allowing project owners to post opportunities, applicants to showcase their skills, and AI to provide intelligent application analysis.
 
 ---
 
@@ -55,7 +55,7 @@ An AI-powered MERN platform that helps students discover, apply for, and collabo
 
 # 🛠️ Tech Stack
 
-### Frontend
+## Frontend
 - React
 - TypeScript
 - Vite
@@ -64,7 +64,7 @@ An AI-powered MERN platform that helps students discover, apply for, and collabo
 - Axios
 - Lucide React
 
-### Backend
+## Backend
 - Node.js
 - Express.js
 - MongoDB Atlas
@@ -72,14 +72,14 @@ An AI-powered MERN platform that helps students discover, apply for, and collabo
 - JWT Authentication
 - bcryptjs
 
-### AI
+## AI
 - Google Gemini API
 
 ---
 
 # 📁 Project Structure
 
-```
+```text
 CollabConnect/
 │
 ├── client/
@@ -97,7 +97,17 @@ CollabConnect/
 │   ├── db/
 │   └── server.js
 │
+├── screenshots/
+│   ├── home.png
+│   ├── projects.png
+│   ├── project-details.png
+│   ├── ai-analysis.png
+│   ├── my-applications.png
+│   ├── applicants.png
+│   └── profile.png
+│
 └── README.md
+```
 
 ---
 
@@ -134,6 +144,8 @@ Authentication Required ✅
 | PUT | `/api/projects/:id` |
 | DELETE | `/api/projects/:id` |
 
+Authentication Required ✅
+
 ---
 
 ## Applications
@@ -153,45 +165,152 @@ Authentication Required ✅
 
 # 📸 Screenshots
 
-<h2>🏠 Home Page</h2>
-<p align="center"><img src="./screenshots/home.png" width="900"/></p>
+## 🏠 Home Page
 
-<h2>📂 Browse Projects</h2>
-<p align="center"><img src="./screenshots/projects.png" width="900"/></p>
-
-<h2>📄 Project Details</h2>
-<p align="center"><img src="./screenshots/project-details.png" width="900"/></p>
-<p align="center">View complete project information including description, required skills, team size,and apply to projects that match your interests.</p>
-
-<h2>🤖 AI-Powered Applicant Analysis</h2>
-<p align="center"><img src="./screenshots/ai-analysis.png" width="900"/></p>
-
-<h2>📩 My Applications</h2>
-<p align="center"><img src="./screenshots/my-applications.png" width="900"/></p>
-<p align="center">Track all submitted applications, monitor their status, and view AI-generated match scores, strengths, and areas for improvement.</p>
-
-<h2>👥 Applicant Management</h2>
-<p align="center"><img src="./screenshots/applicants.png" width="900"/></p>
-
-<h2>👤 User Profile</h2>
-<p align="center"><img src="./screenshots/profile.png" width="900"/></p>
-<p align="center">Manage your profile by updating your bio, skills, and interests to improve project recommendations and AI evaluation.</p>
----
-
-# 🚀 Future Enhancements (Phase 2)
-
-- Real-time chat between project owners and accepted collaborators
-- Notifications
-- AI-powered project recommendations
-- Remove collaborators
-- Email notifications
-- Advanced search and filtering
+![Home](./screenshots/home.png)
 
 ---
 
-# 👩‍💻 Author
+## 📂 Browse Projects
 
-**Bhawna Sharma**
-**Navya**
+![Projects](./screenshots/projects.png)
 
-Built as part of an internship project using the MERN Stack and Google Gemini AI.
+---
+
+## 📄 Project Details
+
+![Project Details](./screenshots/project-details.png)
+
+---
+
+## 🤖 AI-Powered Applicant Analysis
+
+![AI Analysis](./screenshots/ai-analysis.png)
+
+---
+
+## 📩 My Applications
+
+![My Applications](./screenshots/my-applications.png)
+
+---
+
+## 👥 Applicant Management
+
+![Applicants](./screenshots/applicants.png)
+
+---
+
+## 👤 User Profile
+
+![Profile](./screenshots/profile.png)
+
+---
+
+## 🚀 Future Enhancements (Phase 2)
+
+- 💬 Real-time chat between project owners and accepted collaborators
+- 🔔 In-app notifications
+- 🤖 AI-powered project recommendations
+- 👥 Remove collaborators
+- 📧 Email notifications
+- 🔍 Advanced search and filtering
+- 📊 Project analytics dashboard
+- 🌐 GitHub & LinkedIn profile integration
+
+---
+
+# 📦 Installation
+
+## 1️⃣ Clone the Repository
+
+```bash
+git clone https://github.com/your-username/CollabConnect.git
+cd CollabConnect
+```
+
+---
+
+## 2️⃣ Install Dependencies
+
+### Backend
+
+```bash
+cd server
+npm install
+```
+
+### Frontend
+
+```bash
+cd client
+npm install
+```
+
+---
+
+## 3️⃣ Configure Environment Variables
+
+Create a `.env` file inside the **server** folder and add the following variables:
+
+```env
+PORT=3000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+> **Note:** Never commit your actual `.env` file or API keys to GitHub.
+
+---
+
+## 4️⃣ Start the Backend
+
+```bash
+cd server
+npm run dev
+```
+
+The backend will run at:
+
+```
+http://localhost:3000
+```
+
+---
+
+## 5️⃣ Start the Frontend
+
+Open a new terminal and run:
+
+```bash
+cd client
+npm run dev
+```
+
+The frontend will run at:
+
+```
+http://localhost:5173
+```
+
+---
+
+## 6️⃣ Open the Application
+
+Visit the application in your browser:
+
+```
+http://localhost:5173
+```
+
+## 👨‍💻 Author
+
+-**Bhawna Sharma**
+-**Navya**
+
+If you found this project helpful, feel free to ⭐ the repository!
+
+## 🌐 Live Demo
+Frontend: [collabconnect1.vercel.app](https://collabconnect1.vercel.app/)
+Backend API: https://internship-project-backend-8lwm.onrender.com
