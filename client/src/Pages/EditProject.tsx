@@ -75,12 +75,12 @@ function EditProject() {
                             className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
                     </div>
                     <div>
-                        <label className="block text-slate-300 font-semibold mb-2">Project Description<span className="text-slate-400 text-sm font-medium pl-3">(Separate using commas.)</span></label>
+                        <label className="block text-slate-300 font-semibold mb-2">Project Description</label>
                         <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Project Description" 
                             className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
                     </div>
                     <div>
-                        <label className="block text-slate-300 font-semibold mb-2">Required Skills</label>
+                        <label className="block text-slate-300 font-semibold mb-2">Required Skills<span className="text-slate-400 text-sm font-medium pl-3">(Separate using commas.)</span></label>
                         <input value={requiredSkills} onChange={(e) => setRequiredSkills(e.target.value)} placeholder="React, Node, MongoDB" 
                         className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
                     </div>
