@@ -26,7 +26,7 @@ function Profile() {
   const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     e.preventDefault();
     const toastId = toast.custom(()=>(
-          <CustomToast type="info" title="Creating Project" message="Your Project is being created"/>
+          <CustomToast type="info" title="Updating Profile" message="Your Profile is being updated"/>
         ),{duration:Infinity})
     try {
       const res = await api.patch("/users/profile", {
