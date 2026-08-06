@@ -168,7 +168,7 @@ export const analyzeApplication = async (req, res) => {
 
 export const removeCollaborator = async(req,res) => {
     try{
-        const applciation =  await Application.findById(req.params.id).populate("project");
+        const application =  await Application.findById(req.params.id).populate("project");
         if(!application) return res.status(404).json({error : "Application not found."})
         if(application.project.creator.toString() !== req.user.id){
             return res.status(403).json({error : "You are not authorized to perform this action."});
