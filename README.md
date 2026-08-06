@@ -153,15 +153,29 @@ Authentication Required ✅
 
 # 📸 Screenshots
 
-> Add screenshots of:
-- Home Page
-- Project Listing
-- Project Details
-- AI Analysis
-- My Applications
-- Applicant Dashboard
-- Profile Page
+<h2>🏠 Home Page</h2>
+<p align="center"><img src="./screenshots/home.png" width="900"/></p>
 
+<h2>📂 Browse Projects</h2>
+<p align="center"><img src="./screenshots/projects.png" width="900"/></p>
+
+<h2>📄 Project Details</h2>
+<p align="center"><img src="./screenshots/project-details.png" width="900"/></p>
+<p align="center">View complete project information including description, required skills, team size,and apply to projects that match your interests.</p>
+
+<h2>🤖 AI-Powered Applicant Analysis</h2>
+<p align="center"><img src="./screenshots/ai-analysis.png" width="900"/></p>
+
+<h2>📩 My Applications</h2>
+<p align="center"><img src="./screenshots/my-applications.png" width="900"/></p>
+<p align="center">Track all submitted applications, monitor their status, and view AI-generated match scores, strengths, and areas for improvement.</p>
+
+<h2>👥 Applicant Management</h2>
+<p align="center"><img src="./screenshots/applicants.png" width="900"/></p>
+
+<h2>👤 User Profile</h2>
+<p align="center"><img src="./screenshots/profile.png" width="900"/></p>
+<p align="center">Manage your profile by updating your bio, skills, and interests to improve project recommendations and AI evaluation.</p>
 ---
 
 # 🚀 Future Enhancements (Phase 2)
