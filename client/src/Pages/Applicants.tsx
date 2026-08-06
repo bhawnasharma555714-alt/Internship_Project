@@ -66,6 +66,30 @@ function Application() {
             ),{duration:1500})
         }
     };
+
+    const removeCollaborator = async(applicationId:string) => {
+        const confirmDelete = window.confirm("Are you sure you want to remove this collaborator?");
+        if(!confirmDelete) return;
+        const toastId = toast.custom(()=>(
+                <CustomToast type="info" title="Removing Collaborator" message="Collaborator is being removed"/>
+            ),{duration: Infinity})
+        try{
+            await api.patch(`/applications/${applicationId}/remove`);
+            await getProjectApplications();
+            toast.remove(toastId);
+            toast.custom(()=>(
+                <CustomToast type="success" title="Collaborator Removed" message="Collaborator removed successfully"/>
+            ),{duration:1200})
+        }catch(err:any){
+            console.log(err);
+            console.log(err.response);
+            console.log(err.response?.data);
+            toast.remove(toastId)
+            toast.custom(()=>(
+                <CustomToast type="error" title="Removal Failed" message={err.response?.data?.error || "Failed to remove contributor"}/>
+            ),{duration:1400})
+        }
+    }
     const displayedApplications = applications
         .filter((application)=>
             application.applicant.name.toLowerCase().includes(search.toLowerCase())
@@ -217,27 +241,27 @@ function Application() {
                         <div className="mt-8 flex flex-col md:flex-row justify-between md:items-center gap-6">
 
                             <div className="flex items-center gap-3">
-                            <p className="text-slate-400 font-medium">Status </p>
-
-                            <span className={`px-5 py-2 rounded-full font-semibold ${
-                                application.status === "accepted"
-                                ? "bg-green-500/20 text-green-400"
-                                : application.status === "pending"
-                                ? "bg-yellow-500/20 text-yellow-400"
-                                : "bg-red-500/20 text-red-400"
-                            }`}>
-                                {application.status.charAt(0).toUpperCase()+application.status.slice(1)}
-                            </span>
-                        </div>
-
-                        {application.status === "pending" && (
-                            <div className="flex items-center gap-3">
-                                <button onClick={()=>updateStatus(application.id,"accepted")} className=" bg-green-700 text-white font-medium px-8 py-2.5 rounded-lg hover:bg-green-600 transition-colors">Accept</button>
-                                <button onClick={()=>updateStatus(application.id,"rejected")} className="border border-red-500/40 text-red-400 font-medium px-8 py-2.5 rounded-lg hover:bg-red-600 hover:text-white hover:border-red-500 transition-colors">Reject</button>
+                                <p className="text-slate-400 font-medium">Status </p>
+                                <span className={`px-5 py-2 rounded-full font-semibold ${
+                                    application.status === "accepted"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : application.status === "pending"
+                                    ? "bg-yellow-500/20 text-yellow-400"
+                                    : "bg-red-500/20 text-red-400"
+                                }`}>{application.status.charAt(0).toUpperCase()+application.status.slice(1)}</span>
                             </div>
-                        )}
-
-                    </div>
+                            {application.status === "pending" && (
+                                <div className="flex items-center gap-3">
+                                    <button onClick={()=>updateStatus(application.id,"accepted")} className=" bg-green-700 text-white font-medium px-8 py-2.5 rounded-lg hover:bg-green-600 transition-colors">Accept</button>
+                                    <button onClick={()=>updateStatus(application.id,"rejected")} className="border border-red-500/40 text-red-400 font-medium px-8 py-2.5 rounded-lg hover:bg-red-600 hover:text-white hover:border-red-500 transition-colors">Reject</button>
+                                </div>
+                            )}
+                            {application.status === "accepted" && (
+                                <div>
+                                    <button onClick={()=>removeCollaborator(application.id)} className="bg-slate-900 border border-red-500 text-red-400 font-medium px-8 py-2.5 rounded-lg hover:bg-red-600 hover:text-white transition-colors">Remove Collaborator</button>
+                                </div>
+                            )}
+                        </div>
                 </div>)))}
         </Layout>
     );

@@ -1,81 +1,123 @@
-# ProjectHub Backend
+# 🚀 CollabConnect
 
-## Tech Stack
-
-* Node.js
-* Express.js
-* MongoDB Atlas
-* Mongoose
-* JWT Authentication
-* bcryptjs
+An AI-powered MERN platform that helps students discover, apply for, and collaborate on projects. CollabConnect streamlines project recruitment by allowing project owners to post opportunities, applicants to showcase their skills, and AI to provide intelligent application analysis.
 
 ---
 
-## Installation
+## ✨ Features
 
-```bash
-npm install
-```
+### 🔐 Authentication
+- User Signup & Login
+- JWT-based Authentication
+- Secure Password Hashing using bcryptjs
+- Protected Routes
 
-Create a `.env` file:
+### 👤 User Profile
+- View Profile
+- Update Bio
+- Update Skills
+- Update Interests
 
-```env
-PORT=3000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
-```
+### 📂 Project Management
+- Create Projects
+- View All Projects
+- View Project Details
+- View My Projects
+- Edit Projects
+- Delete Projects
 
-Run the server:
+### 📩 Applications
+- Apply to Projects
+- Prevent Duplicate Applications
+- View My Applications
+- Withdraw Applications
 
-```bash
-npm run dev
-```
+### 👥 Applicant Management
+- View Applicants for a Project
+- Accept Applicants
+- Reject Applicants
+- Application Status Management
+
+### 🤖 AI Integration
+- AI-powered Applicant Analysis
+- AI Match Score
+- Strengths Identification
+- Areas for Improvement
+- Graceful fallback when AI service is unavailable
+
+### 🎨 User Experience
+- Responsive UI
+- Active Navigation
+- Custom Toast Notifications
+- Clean Dark Theme
 
 ---
 
-# API Endpoints
+# 🛠️ Tech Stack
+
+### Frontend
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+- Axios
+- Lucide React
+
+### Backend
+- Node.js
+- Express.js
+- MongoDB Atlas
+- Mongoose
+- JWT Authentication
+- bcryptjs
+
+### AI
+- Google Gemini API
+
+---
+
+# 📁 Project Structure
+
+```
+CollabConnect/
+│
+├── client/
+│   ├── Components/
+│   ├── Context/
+│   ├── Pages/
+│   ├── Services/
+│   └── Assets/
+│
+├── server/
+│   ├── Controllers/
+│   ├── Middleware/
+│   ├── Models/
+│   ├── Routes/
+│   ├── db/
+│   └── server.js
+│
+└── README.md
+
+---
+
+# 🔗 API Endpoints
 
 ## Authentication
 
-### Signup
-
-**POST**
-
-```
-/api/auth/signup
-```
-
-### Login
-
-**POST**
-
-```
-/api/auth/login
-```
+| Method | Endpoint |
+|---------|----------|
+| POST | `/api/auth/signup` |
+| POST | `/api/auth/login` |
 
 ---
 
-## User
+## Users
 
-### Get Profile
-
-**GET**
-
-```
-/api/users/profile
-```
-
-Authentication Required ✅
-
----
-
-### Update Profile
-
-**PUT**
-
-```
-/api/users/profile
-```
+| Method | Endpoint |
+|---------|----------|
+| GET | `/api/users/profile` |
+| PUT | `/api/users/profile` |
 
 Authentication Required ✅
 
@@ -83,125 +125,59 @@ Authentication Required ✅
 
 ## Projects
 
-### Create Project
-
-**POST**
-
-```
-/api/projects
-```
-
-Authentication Required ✅
-
----
-
-### Get All Projects
-
-**GET**
-
-```
-/api/projects
-```
-
----
-
-### Get Project By ID
-
-**GET**
-
-```
-/api/projects/:id
-```
-
----
-
-### Get My Created Projects
-
-**GET**
-
-```
-/api/projects/my
-```
-
-Authentication Required ✅
+| Method | Endpoint |
+|---------|----------|
+| POST | `/api/projects` |
+| GET | `/api/projects` |
+| GET | `/api/projects/:id` |
+| GET | `/api/projects/my` |
+| PUT | `/api/projects/:id` |
+| DELETE | `/api/projects/:id` |
 
 ---
 
 ## Applications
 
-### Apply to Project
-
-**POST**
-
-```
-/api/applications/:id/apply
-```
-
-Authentication Required ✅
-
----
-
-### Get My Applications
-
-**GET**
-
-```
-/api/applications/my
-```
+| Method | Endpoint |
+|---------|----------|
+| POST | `/api/applications/:id/apply` |
+| GET | `/api/applications/my` |
+| DELETE | `/api/applications/:id` |
+| GET | `/api/applications/:id/applicants` |
+| PATCH | `/api/applications/:id` |
+| PATCH | `/api/applications/:id/analyze` |
 
 Authentication Required ✅
 
 ---
 
-### Get Project Applicants
+# 📸 Screenshots
 
-**GET**
-
-```
-/api/applications/:id/applicants
-```
-
-Authentication Required ✅
-
----
-
-## Project Structure
-
-```
-backend/
-│
-├── Controllers/
-├── Middleware/
-├── Models/
-├── Routes/
-├── db/
-├── .env
-├── server.js
-└── package.json
-```
+> Add screenshots of:
+- Home Page
+- Project Listing
+- Project Details
+- AI Analysis
+- My Applications
+- Applicant Dashboard
+- Profile Page
 
 ---
 
-## Current Features
+# 🚀 Future Enhancements (Phase 2)
 
-* User Authentication (JWT)
-* Password Hashing
-* Create Project
-* View Projects
-* Apply to Projects
-* View Applied Projects
-* View Created Projects
-* Update User Profile
+- Real-time chat between project owners and accepted collaborators
+- Notifications
+- AI-powered project recommendations
+- Remove collaborators
+- Email notifications
+- Advanced search and filtering
 
 ---
 
-## Future Features
+# 👩‍💻 Author
 
-* AI Project Description Generator
-* AI Candidate Match Score
-* AI Feedback
-* Accept/Reject Applicants
-* GitHub & LinkedIn Integration
-* Project Search & Filters
-* Notifications
-* Deployment
+**Bhawna Sharma**
+**Navya**
+
+Built as part of an internship project using the MERN Stack and Google Gemini AI.

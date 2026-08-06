@@ -165,3 +165,25 @@ export const analyzeApplication = async (req, res) => {
         });
     }
 }
+
+export const removeCollaborator = async(req,res) => {
+    try{
+        const applciation =  await Application.findById(req.params.id).populate("project");
+        if(!application) return res.status(404).json({error : "Application not found."})
+        if(application.project.creator.toString() !== req.user.id){
+            return res.status(403).json({error : "You are not authorized to perform this action."});
+        }
+        if(application.status !== "accepted"){
+            return res.status(400).json({error : "Only accepted collaborators can be removed"});
+        }
+        application.status = "pending";
+        await application.save();
+        return res.status(200).json({
+            message:"Collaborator removed successfully.",
+            application,
+        })
+    }catch(err){
+        console.log(err);
+        return res.status(500).json({error:"Server Error"});
+    }
+};
