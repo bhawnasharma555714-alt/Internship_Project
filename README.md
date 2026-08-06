@@ -304,10 +304,12 @@ Visit the application in your browser:
 http://localhost:5173
 ```
 
-## 👨‍💻 Author
+## 👥 Contributors
 
--**Bhawna Sharma**
--**Navya**
+| Name | Role |
+|------|------|
+| **Bhawna Sharma** | Backend Development, AI Integration, Database Design, Deployment |
+| **Navya** | Frontend Development, UI/UX Design, React Development |
 
 If you found this project helpful, feel free to ⭐ the repository!
 
