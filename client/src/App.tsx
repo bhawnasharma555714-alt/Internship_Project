@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
 import Auth from './Pages/Auth';
 import Home from './Pages/Home';
 import Project from './Pages/Project';
@@ -11,12 +12,23 @@ import ProjectDetails from './Pages/ProjectDetails';
 import MyApplications from './Pages/MyApplications';
 import EditProject from './Pages/EditProject'; 
 import Applicants from './Pages/Applicants';
+import socket from './socket';
 
 import './app.css';
 import NotFound from './Pages/NotFound';
+import Chat from './Pages/Chat';
 
 
 function App() {
+  useEffect(() => {
+        socket.on("connect", () => {
+            console.log("Connected to Socket.IO:", socket.id);
+        });
+
+        return () => {
+            socket.off("connect");
+        };
+      }, []);
   return (
     <BrowserRouter>
       <Navbar/>
@@ -32,7 +44,7 @@ function App() {
         <Route path="/applications/:id/applicants" element={<ProtectedRoute><Applicants /></ProtectedRoute>}/>
         <Route path="/project/:id/edit" element={<ProtectedRoute><EditProject /></ProtectedRoute>}/>
         <Route path="*" element={<NotFound />} />
-      </Routes>
+        <Route path="/chat/:projectId" element={<ProtectedRoute><Chat/></ProtectedRoute>} /></Routes>
     </BrowserRouter>
   )
 }

@@ -1,5 +1,6 @@
 import { createContext, useContext,useState,useEffect,type ReactNode} from "react";
 import type { AuthUser } from "../types/AuthUser";
+import socket from "../socket";
 
 interface AuthContextType{
     user: AuthUser | null;
@@ -20,7 +21,6 @@ export function AuthProvider({children}: AuthProviderProps){
     const [user, setUser] = useState<AuthUser | null>(null);
     const [token,setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-
     //Restore user a fter Refresh
     useEffect(()=> {
         const savedToken = localStorage.getItem("token");
@@ -45,6 +45,9 @@ export function AuthProvider({children}: AuthProviderProps){
         localStorage.removeItem("user");
         setToken(null);
         setUser(null);
+        if (socket) {
+            socket.disconnect();
+        }
     }
     const updateUser = (user: AuthUser) => {
         setUser(user);

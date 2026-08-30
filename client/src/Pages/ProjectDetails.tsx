@@ -9,22 +9,50 @@ import Loader from "../Components/Loader";
 import toast from "react-hot-toast";
 import CustomToast from "../Components/CustomToast";
 import { useAuth } from "../Context/AuthContext";
-
+import socket from "../socket";
+type Application = {
+    project: string;
+    status: string;
+};
 function ProjectDetails(){
     const { id } = useParams();
     const { user } = useAuth();
     const[project,setProject] = useState<project | null>(null);
+    const [applications, setApplications] = useState<Application[]>([]);
     const[error,setError] = useState("");
     const[loading, setLoading] = useState(true);
     const [isApplying,setIsApplying] = useState(false);
     const[expanded,setExpanded] = useState(false);
     const navigate = useNavigate();
     const isOwner = project?.creator.id === user?.id;
-    console.log(isOwner);
+    
+    useEffect(() => {
+        if (id) {
+            socket.emit("joinProject", id);
+        }
+    }, [id]);
     useEffect(()=>{
         getProject();
     },[])
+    useEffect(() => {
+        const fetchApplications = async () => {
+            try {
+                const response = await api.get("/applications/my");
+                setApplications(response.data);
+            } catch (error) {
+                console.error("Error fetching applications:", error);
+            }
+        };
 
+        if (user) {
+            fetchApplications();
+        }
+    }, [user]);
+    const isAccepted = applications.some(
+        app =>
+            app.project === project?.id &&
+            app.status === "accepted"
+    );
     const getProject = async() => {
         try{
             const res = await api.get(`/projects/${id}`);
@@ -104,6 +132,8 @@ function ProjectDetails(){
                             <span className="pl-1 md:pl-2 text-slate-400 font-medium">{project.membersRequired} Members</span>
                         </div>
                         {isOwner? (<button className="bg-sky-700 text-white font-medium px-4 md:px-8 py-2 md:py-3 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={()=> navigate(`/applications/${project.id}/applicants`)}>View Applicants</button>) :(<button disabled={isApplying} className="bg-sky-700 text-white font-medium px-8 py-2 mt-6 rounded-lg hover:bg-sky-600 transition-colors" onClick={handleApply}>{isApplying ? "Applying...":"Apply"}</button>)}
+                        {(isOwner || isAccepted) && (<button className="text-white" onClick={() => navigate(`/chat/${id}`)}>Open Chat</button>)}
+                        
                     </div>
                 </div>}
         </Layout>

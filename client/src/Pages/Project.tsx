@@ -20,7 +20,6 @@ function Project(){
     const getProjects = async() => {
         try{
             const res = await api.get("/projects");
-            console.log(res.data);
             setProjects(res.data);
         }catch(err){
             console.log(err)
@@ -83,8 +82,10 @@ function Project(){
                                 </div>
 
                                 <Link to={`/projects/${project.id}`} className="text-sky-500 font-medium hover:text-sky-400">View Details →</Link>
+
                             </div>
                         </div>
+
                     ))}
                 </div>
             )}

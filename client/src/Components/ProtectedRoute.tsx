@@ -7,10 +7,11 @@ interface ProtectedRouteProps {
 }
 
 function ProtectedRoute({children}: ProtectedRouteProps){
-    const {token,loading} = useAuth();
+    const {token,loading,user} = useAuth();
     if(loading){
         return <h2>Loading...</h2>
     }
+    if(!user) return <Navigate to='/login' replace/>
     if(!token){
         return <Navigate to='/login'/>
     }

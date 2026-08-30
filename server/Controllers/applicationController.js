@@ -116,13 +116,18 @@ export const updateApplicationStatus = async (req, res) => {
                 project: application.project._id,
                 status: "accepted"
             });
-
+            console.log("ACCEPTED COUNT:", acceptedCount);
+            console.log("MEMBERS REQUIRED:", application.project.membersRequired);  
             if (acceptedCount >= application.project.membersRequired) {
                 return res.status(400).json({ error: "Project has reached its member capacity!" });
             }
         }
-
         application.status = status;
+        if (status === "accepted") {
+            application.acceptedAt = new Date();
+        } else {
+            application.acceptedAt = null;
+        }
         await application.save();
 
         res.status(200).json({
@@ -177,6 +182,7 @@ export const removeCollaborator = async(req,res) => {
             return res.status(400).json({error : "Only accepted collaborators can be removed"});
         }
         application.status = "pending";
+        application.acceptedAt = null;
         await application.save();
         return res.status(200).json({
             message:"Collaborator removed successfully.",

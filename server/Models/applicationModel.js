@@ -7,7 +7,8 @@ const ApplicationSchema = new mongoose.Schema({
     aiFeedback: {type:String, default:null},
     strengths: {type:[String], default:[]},
     weaknesses: {type:[String], default:[]},
-    status:{type:String, enum: ["pending", "accepted", "rejected"], default:"pending"}
+    status:{type:String, enum: ["pending", "accepted", "rejected"], default:"pending"},
+    acceptedAt: {type:Date, default: null}
 })
 
 ApplicationSchema.set("toJSON", {  
