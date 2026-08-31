@@ -13,10 +13,13 @@ import MyApplications from './Pages/MyApplications';
 import EditProject from './Pages/EditProject'; 
 import Applicants from './Pages/Applicants';
 import socket from './socket';
+import VerifyEmail from './Pages/VerifyEmail';
 
 import './app.css';
 import NotFound from './Pages/NotFound';
 import Chat from './Pages/Chat';
+import ResetPassword from './Pages/ResetPassword';
+import ForgotPassword from './Pages/ForgotPassword';
 
 
 function App() {
@@ -44,7 +47,11 @@ function App() {
         <Route path="/applications/:id/applicants" element={<ProtectedRoute><Applicants /></ProtectedRoute>}/>
         <Route path="/project/:id/edit" element={<ProtectedRoute><EditProject /></ProtectedRoute>}/>
         <Route path="*" element={<NotFound />} />
-        <Route path="/chat/:projectId" element={<ProtectedRoute><Chat/></ProtectedRoute>} /></Routes>
+        <Route path="/chat/:projectId" element={<ProtectedRoute><Chat/></ProtectedRoute>} />
+        <Route path='/verify-email' element={<VerifyEmail/>}/>
+        <Route path='/forgot-password' element={<ForgotPassword/>}/>
+        <Route path='/reset-password' element={<ResetPassword/>}/>
+        </Routes>
     </BrowserRouter>
   )
 }

@@ -7,6 +7,7 @@ import Error from "../Components/Error"
 import { SmilePlus, Eye, EyeClosed } from "lucide-react";
 import toast from "react-hot-toast";
 import CustomToast from "../Components/CustomToast";
+import { Link } from "react-router-dom";
 function Auth() {
   const { login } = useAuth();
 
@@ -50,17 +51,18 @@ function Auth() {
       } else {
           login(data.token, data.user);
           toast.custom(()=>(
-            <CustomToast type="success" title="Login Successful" message="Your have logged in successfully."/>
+            <CustomToast type="success" title="Signup Successful" message="Please check your email to verify your account before logging in."/>
           ),{duration:1500})
           setEmail("");
           setPassword("");
           navigate("/");
         }
-      } catch (err: any) {
-        setError(err.response?.data?.error || "Something went wrong");
+      }catch (err: any) {
+        const backendMessage = err.response?.data?.error || "Something went wrong";
+        setError(backendMessage);
         toast.custom(()=>(
-          <CustomToast type="error" title="Login Failed" message="Unable to login"/>
-        ),{duration:1500})
+          <CustomToast type="error" title={isSignup ? "Signup Failed" : "Login Failed"} message={backendMessage}/>
+        ),{duration:2500})
       } finally {
         setLoading(false);
       }
@@ -121,6 +123,13 @@ function Auth() {
                   {showPassword ? <EyeClosed size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+              {!isSignup && (
+                <div className="text-right mt-2">
+                  <Link to="/forgot-password" className="text-sky-500 text-sm hover:text-sky-400 font-medium">
+                    Forgot Password?
+                  </Link>
+                </div>
+              )}
             </div>
 
            <div className="flex justify-center">
