@@ -10,6 +10,7 @@ const transporter = nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    connectionTimeout: 10000, // 10 seconds — fail fast instead of hanging forever
 });
 
 export const sendVerificationEmail = async (toEmail, rawToken) => {
