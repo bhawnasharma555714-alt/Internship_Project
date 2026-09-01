@@ -31,8 +31,10 @@ export const sendVerificationEmail = async (toEmail, rawToken) => {
 
 export const sendResetPasswordEmail = async (toEmail, rawToken) => {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+    console.log("Attempting to send via Resend to:", toEmail);
+    console.log("Using API key present?", !!process.env.RESEND_API_KEY);
 
-    await resend.emails.send({
+    const result = await resend.emails.send({
         from: process.env.EMAIL_FROM,
         to: toEmail,
         subject: "Reset your CollabConnect password",
@@ -52,5 +54,6 @@ export const sendResetPasswordEmail = async (toEmail, rawToken) => {
             </div>
         `,
     });
+
     console.log("Resend result:", result);
 };
