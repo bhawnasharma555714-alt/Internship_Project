@@ -1,22 +1,13 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import dotenv from "dotenv";
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT),
-    secure: Number(process.env.EMAIL_PORT) === 465, // true for port 465, false otherwise
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    connectionTimeout: 10000, // 10 seconds — fail fast instead of hanging forever
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendVerificationEmail = async (toEmail, rawToken) => {
     const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${rawToken}`;
 
-    await transporter.sendMail({
+    await resend.emails.send({
         from: process.env.EMAIL_FROM,
         to: toEmail,
         subject: "Verify your CollabConnect email",
@@ -41,7 +32,7 @@ export const sendVerificationEmail = async (toEmail, rawToken) => {
 export const sendResetPasswordEmail = async (toEmail, rawToken) => {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
 
-    await transporter.sendMail({
+    await resend.emails.send({
         from: process.env.EMAIL_FROM,
         to: toEmail,
         subject: "Reset your CollabConnect password",
