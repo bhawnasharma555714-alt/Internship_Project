@@ -145,6 +145,7 @@ export const resendVerification = async(req, res) => {
 }
 
 export const forgotPassword = async(req, res) => {
+    console.log("forgotPassword called with:", req.body);
     try {
         const { email } = req.body;
         if(!email){
