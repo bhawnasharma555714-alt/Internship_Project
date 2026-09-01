@@ -52,4 +52,5 @@ export const sendResetPasswordEmail = async (toEmail, rawToken) => {
             </div>
         `,
     });
+    console.log("Resend result:", result);
 };
