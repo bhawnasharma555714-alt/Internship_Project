@@ -1,13 +1,15 @@
-import { useState, type SyntheticEvent } from "react";
+import { useState, type SyntheticEvent, useEffect} from "react";
 import { useAuth } from "../Context/AuthContext";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import Layout from "../Components/Layout";
 import Error from "../Components/Error"
 import { SmilePlus, Eye, EyeClosed } from "lucide-react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import CustomToast from "../Components/CustomToast";
-import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+
 function Auth() {
   const { login } = useAuth();
 
@@ -18,9 +20,23 @@ function Auth() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [searchParams] = useSearchParams();
 
   const navigate = useNavigate();
+  useEffect(() => {
+    const requirePassword = searchParams.get("requirePassword");
+    const oauthEmail = searchParams.get("email");
+    const oauthError = searchParams.get("error");
 
+    if (requirePassword && oauthEmail) {
+      setEmail(oauthEmail);
+      setIsSignup(false);
+      setError("This email is already registered. Please enter your password to log in.");
+    }
+    if (oauthError) {
+      setError("GitHub login failed. Please try again.");
+    }
+  }, []);
   const handleSubmit = async (
     e: SyntheticEvent<HTMLFormElement, SubmitEvent>
   ) => {
@@ -147,6 +163,30 @@ function Auth() {
            </div>
           </form>
 
+          <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 h-px bg-slate-700"></div>
+              <span className="text-slate-500 text-sm">OR</span>
+              <div className="flex-1 h-px bg-slate-700"></div>
+          </div>
+          <a  href="https://internship-project-backend-8lwm.onrender.com/api/auth/google"
+            className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-950 border border-slate-700 text-white font-semibold py-3 rounded-lg transition-colors mb-3"
+          >
+            <img 
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
+              alt="Google" 
+              className="w-5 h-5" 
+            />
+            Continue with Google
+          </a>
+          <a
+            href="https://internship-project-backend-8lwm.onrender.com/api/auth/github"
+            className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-950 border border-slate-700 text-white font-semibold py-3 rounded-lg transition-colors"
+          ><img 
+            src="https://unpkg.com/simple-icons@v11/icons/github.svg" 
+            alt="GitHub" 
+            className="w-5 h-5 invert" 
+          />Continue with GitHub</a>
+          
           <div className="mt-4 text-center">
             <button
               onClick={() => {

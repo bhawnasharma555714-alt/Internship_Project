@@ -20,6 +20,7 @@ import NotFound from './Pages/NotFound';
 import Chat from './Pages/Chat';
 import ResetPassword from './Pages/ResetPassword';
 import ForgotPassword from './Pages/ForgotPassword';
+import OAuthSuccess from './Pages/OAuthSuccess';
 
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
         <Route path='/verify-email' element={<VerifyEmail/>}/>
         <Route path='/forgot-password' element={<ForgotPassword/>}/>
         <Route path='/reset-password' element={<ResetPassword/>}/>
+        <Route path='/oauth-success' element={<OAuthSuccess/>}/>
         </Routes>
     </BrowserRouter>
   )

@@ -13,6 +13,8 @@ import messageRoutes from './Routes/messageRoutes.js';
 import { setupSocket } from "./socket/socketHandler.js";
 //Middlewares
 import {middleware} from './Middlewares/middleware.js';
+import githubSkillsRoutes from './Routes/githubSkillsRoutes.js';
+
 dotenv.config();
 const port = process.env.PORT || 3000;
 let app = express();
@@ -34,6 +36,8 @@ app.use('/api/projects',projectRoutes);
 app.use('/api/applications',applcationRoutes);
 app.use('/api/users',userRoutes);
 app.use('/api/messages', messageRoutes);
+// ... other middlewares and routes
+app.use('/api/github-skills', githubSkillsRoutes);
 app.get("/", (req, res) => {
     res.send("Server is running!");
 });

@@ -5,4 +5,6 @@ export interface AuthUser{
     bio: string;
     skills: string[];
     interests: string[];
+    githubId: string | null;
+    githubUsername: string | null;
 };

@@ -1,6 +1,6 @@
 import express from 'express';
 import { createProject, getAllProjects, getProjectById, getMyCreatedProject , updateProject, deleteProject} from '../Controllers/ProjectController.js';
-import { verifyToken } from '../Middlewares/authMiddleware.js';
+import { verifyToken } from '../Middlewares/authMiddleWare.js';
 
 const router = express.Router();
 
