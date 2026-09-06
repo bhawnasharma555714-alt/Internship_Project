@@ -32,18 +32,6 @@ export function AuthProvider({children}: AuthProviderProps){
         }
         setLoading(false);
     },[])
-    useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-        api.get("/auth/me") // or /users/profile
-        .then((res) => {
-            setUser(res.data);
-        })
-        .catch(() => {
-            logout();
-        });
-    }
-    }, []);
 
     const login = (token: string, user:AuthUser) => {
         localStorage.setItem("token",token);
