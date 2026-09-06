@@ -14,13 +14,11 @@ export const analyzeGithubSkills = async (req, res) => {
     const userId = req.user.id; // From verifyToken middleware
 
     // 1. Fetch user & verify GitHub account is attached
-    // Controllers/githubSkillsController.js
     const user = await User.findById(userId).select('+githubAccessToken');
-
-    if (!user || !user.githubAccessToken) {
-    return res.status(401).json({
-        message: 'GitHub token missing or invalid. Please re-link your GitHub account.',
-    });
+    if (!user || !user.githubId || !user.githubAccessToken) {
+      return res.status(400).json({
+        message: 'Please link your GitHub account before running skill analysis.',
+      });
     }
 
     // 2. Check Cache / Cooldown Period (~7 days)
@@ -75,36 +73,36 @@ export const analyzeGithubSkills = async (req, res) => {
     }
 
     const evidencedList = Array.from(aggregatedEvidencedSkills.values());
-    const evidencedSkillNames = new Set(evidencedList.map((s) => s.skillName));
 
-    // 5. Categorize into 3-Part Output
-    const userSkills = (user.skills || []).map((s) => s.trim().toLowerCase());
+    // 5. Categorize into 3-Part Output (Case-Insensitive Matching)
+    const userSkillsRaw = user.skills || [];
+    const userSkillsLower = userSkillsRaw.map((s) => s.trim().toLowerCase());
+
+    // Build a map of evidenced skill names (lowercase -> canonical skillName)
+    const evidencedMap = new Map();
+    evidencedList.forEach((ev) => {
+      evidencedMap.set(ev.skillName.toLowerCase(), ev.skillName);
+    });
 
     const supportedSkills = [];
     const claimedOnlySkills = [];
-    const suggestedSkills = [];
 
-    // Check user claimed skills against GitHub evidence
-    (user.skills || []).forEach((userSkill) => {
+    // Categorize user's claimed skills
+    userSkillsRaw.forEach((userSkill) => {
       const normalized = userSkill.trim().toLowerCase();
-      const hasMatch = Array.from(evidencedSkillNames).some(
-        (evSkill) => evSkill.toLowerCase() === normalized
-      );
-
-      if (hasMatch) {
-        supportedSkills.push(userSkill);
+      if (evidencedMap.has(normalized)) {
+        supportedSkills.push(evidencedMap.get(normalized));
       } else {
-        claimedOnlySkills.push(userSkill);
+        claimedOnlySkills.push(userSkill.trim());
       }
     });
 
-    // Determine suggested skills (evidenced on GitHub, but missing from profile)
-    evidencedList.forEach((evItem) => {
-      const isAlreadyClaimed = userSkills.some(
-        (uSkill) => uSkill === evItem.skillName.toLowerCase()
-      );
-      if (!isAlreadyClaimed) {
-        suggestedSkills.push(evItem.skillName);
+    // Suggested Skills (found in commits BUT not in user's profile skills)
+    const suggestedSkills = [];
+    evidencedList.forEach((ev) => {
+      const evLower = ev.skillName.toLowerCase();
+      if (!userSkillsLower.includes(evLower)) {
+        suggestedSkills.push(ev.skillName);
       }
     });
 
@@ -128,18 +126,17 @@ export const analyzeGithubSkills = async (req, res) => {
       message: 'GitHub skill analysis completed successfully.',
       profile: existingProfile,
     });
-  // Controllers/githubSkillsController.js
-} catch (error) {
-  console.error('GitHub Skill Analysis Error:', error.message);
-  
-  if (error.message === 'GITHUB_TOKEN_EXPIRED') {
-    return res.status(401).json({
-      message: 'Your GitHub session has expired. Please re-link your GitHub account.',
-    });
-  }
+  } catch (error) {
+    console.error('GitHub Skill Analysis Error:', error.message);
 
-  return res.status(500).json({ message: 'Failed to analyze GitHub skills.' });
-}
+    if (error.message === 'GITHUB_TOKEN_EXPIRED') {
+      return res.status(401).json({
+        message: 'Your GitHub session has expired. Please re-link your GitHub account.',
+      });
+    }
+
+    return res.status(500).json({ message: 'Failed to analyze GitHub skills.' });
+  }
 };
 
 /**
