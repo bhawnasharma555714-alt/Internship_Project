@@ -1,34 +1,28 @@
 // utils/skillAnalyzer.js
-import { EXTENSION_MAP, STATIC_DEPENDENCY_DICT, IMPORT_REGEX_PATTERNS } from './skillMappings.js';
+import { EXTENSION_MAP, STATIC_DEPENDENCY_DICT, GENAI_INLINE_PATTERNS } from './skillMappings.js';
 
-/**
- * Analyzes array of file changes from a single commit diff
- * @param {Array} files - Files array returned by GitHub commit endpoint
- * @param {String} repoName - Repository name for sourcing evidence
- * @returns {Array} List of detected skill evidence objects
- */
 export const extractSkillsFromDiffFiles = (files, repoName) => {
   const detectedSkillsMap = new Map();
 
   files.forEach((file) => {
     const filename = file.filename || '';
     const patch = file.patch || '';
+    const lowerFilename = filename.toLowerCase();
     const fileExt = filename.split('.').pop()?.toLowerCase();
 
-    // 1. Extension Detection
+    // 1. File Extension Detection (.kt, .py, .ipynb, .tsx, etc.)
     if (fileExt && EXTENSION_MAP[fileExt]) {
-      const skillName = EXTENSION_MAP[fileExt];
-      addDetectedSkill(detectedSkillsMap, skillName, {
+      addDetectedSkill(detectedSkillsMap, EXTENSION_MAP[fileExt], {
         repoName,
         filePath: filename,
         matchedBy: 'extension',
       });
     }
 
-    // 2. Package Dependency Diff Parsing
-    if (filename.endsWith('package.json')) {
-      const addedDependencies = extractAddedNpmDependencies(patch);
-      addedDependencies.forEach((dep) => {
+    // 2. Node.js dependency parsing (package.json)
+    if (lowerFilename.endsWith('package.json')) {
+      const addedDeps = extractAddedNpmDependencies(patch);
+      addedDeps.forEach((dep) => {
         if (STATIC_DEPENDENCY_DICT[dep]) {
           addDetectedSkill(detectedSkillsMap, STATIC_DEPENDENCY_DICT[dep], {
             repoName,
@@ -39,21 +33,33 @@ export const extractSkillsFromDiffFiles = (files, repoName) => {
       });
     }
 
-    // 3. Import Statement Regex Matches in Patch Text
+    // 3. Python dependency parsing (requirements.txt / pyproject.toml / Pipfile)
+    if (
+      lowerFilename.endsWith('requirements.txt') ||
+      lowerFilename.endsWith('pyproject.toml') ||
+      lowerFilename.endsWith('pipfile')
+    ) {
+      const addedPyDeps = extractAddedPythonDependencies(patch);
+      addedPyDeps.forEach((dep) => {
+        if (STATIC_DEPENDENCY_DICT[dep]) {
+          addDetectedSkill(detectedSkillsMap, STATIC_DEPENDENCY_DICT[dep], {
+            repoName,
+            filePath: filename,
+            matchedBy: 'python_dep',
+          });
+        }
+      });
+    }
+
+    // 4. Inline GenAI Code & Prompt Pattern Matching
     if (patch) {
-      IMPORT_REGEX_PATTERNS.forEach((pattern) => {
-        let match;
-        // Reset regex state
-        pattern.lastIndex = 0;
-        while ((match = pattern.exec(patch)) !== null) {
-          const importedPkg = match[1]?.toLowerCase();
-          if (importedPkg && STATIC_DEPENDENCY_DICT[importedPkg]) {
-            addDetectedSkill(detectedSkillsMap, STATIC_DEPENDENCY_DICT[importedPkg], {
-              repoName,
-              filePath: filename,
-              matchedBy: 'import_regex',
-            });
-          }
+      GENAI_INLINE_PATTERNS.forEach(({ pattern, skill }) => {
+        if (pattern.test(patch)) {
+          addDetectedSkill(detectedSkillsMap, skill, {
+            repoName,
+            filePath: filename,
+            matchedBy: 'inline_code_match',
+          });
         }
       });
     }
@@ -62,29 +68,29 @@ export const extractSkillsFromDiffFiles = (files, repoName) => {
   return Array.from(detectedSkillsMap.values());
 };
 
-/**
- * Parses added lines (+) in package.json patch text to extract dependency names
- */
 const extractAddedNpmDependencies = (patchText) => {
   const addedDeps = [];
-  const lines = patchText.split('\n');
-
-  lines.forEach((line) => {
-    // Only target added lines in diffs
+  patchText.split('\n').forEach((line) => {
     if (line.startsWith('+') && !line.startsWith('+++')) {
       const match = line.match(/"([^"]+)":\s*"[^"]+"/);
-      if (match && match[1]) {
-        addedDeps.push(match[1].toLowerCase());
-      }
+      if (match && match[1]) addedDeps.push(match[1].toLowerCase());
     }
   });
-
   return addedDeps;
 };
 
-/**
- * Helper to aggregate detected skills and source instances
- */
+const extractAddedPythonDependencies = (patchText) => {
+  const addedDeps = [];
+  patchText.split('\n').forEach((line) => {
+    if (line.startsWith('+') && !line.startsWith('+++')) {
+      const cleanLine = line.substring(1).trim().toLowerCase();
+      const match = cleanLine.match(/^([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) addedDeps.push(match[1]);
+    }
+  });
+  return addedDeps;
+};
+
 const addDetectedSkill = (skillsMap, skillName, source) => {
   if (!skillsMap.has(skillName)) {
     skillsMap.set(skillName, {

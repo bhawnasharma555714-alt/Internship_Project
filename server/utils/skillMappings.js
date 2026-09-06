@@ -1,6 +1,7 @@
 // utils/skillMappings.js
 
 // File extension to skill mapping
+
 export const EXTENSION_MAP = {
   js: 'JavaScript',
   jsx: 'React',
@@ -8,19 +9,27 @@ export const EXTENSION_MAP = {
   tsx: 'React',
   py: 'Python',
   java: 'Java',
-  cpp: 'C++',
-  c: 'C',
   cs: 'C#',
-  go: 'Go',
-  rs: 'Rust',
   php: 'PHP',
   rb: 'Ruby',
   kt: 'Kotlin',
-  swift: 'Swift',
   html: 'HTML',
   css: 'CSS',
   scss: 'Sass',
   sql: 'SQL',
+  //Mobile Development
+  kt: 'Kotlin',
+  kts: 'Kotlin',
+  dart: 'Flutter',
+  swift: 'Swift',
+  java: 'Java/Android',
+  //Data Science / AI
+  cpp: 'C++',
+  c: 'C',
+  ipynb: 'Jupyter / Data Science',
+  go: 'Go',
+  rs: 'Rust',
+  
 };
 
 // Static dependency to skill dictionary (Package manager dependencies)
