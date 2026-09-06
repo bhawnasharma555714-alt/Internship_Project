@@ -15,6 +15,7 @@ function Profile() {
   const [interests, setInterests] = useState((user?.interests || []).join(", "));
   const [editing, setEditing] = useState(false);
 
+
   // GitHub Skill Insights State
   const [analysis, setAnalysis] = useState<any>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -29,6 +30,7 @@ function Profile() {
       setBio(user.bio || "");
       setSkills((user.skills || []).join(", "));
       setInterests((user.interests || []).join(", "));
+      
     }
   }, [user]);
 
@@ -48,7 +50,9 @@ function Profile() {
     ), { duration: Infinity });
 
     try {
+      console.log(skills);
       const res = await api.patch("/users/profile", {
+        
         bio,
         skills: skills
           .split(",")

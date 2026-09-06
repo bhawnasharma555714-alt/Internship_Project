@@ -1,71 +1,59 @@
 // utils/skillMappings.js
 
-// File extension to skill mapping
-
 export const EXTENSION_MAP = {
+  // Web Core
   js: 'JavaScript',
-  jsx: 'React',
+  jsx: 'JavaScript',
   ts: 'TypeScript',
-  tsx: 'React',
-  py: 'Python',
-  java: 'Java',
-  cs: 'C#',
-  php: 'PHP',
-  rb: 'Ruby',
-  kt: 'Kotlin',
+  tsx: 'TypeScript',
   html: 'HTML',
   css: 'CSS',
-  scss: 'Sass',
-  sql: 'SQL',
-  //Mobile Development
+
+  // Mobile Development
   kt: 'Kotlin',
   kts: 'Kotlin',
   dart: 'Flutter',
   swift: 'Swift',
   java: 'Java/Android',
-  //Data Science / AI
+
+  // AI, Data Science & Backend
+  py: 'Python',
+  ipynb: 'Jupyter / Data Science',
   cpp: 'C++',
   c: 'C',
-  ipynb: 'Jupyter / Data Science',
   go: 'Go',
   rs: 'Rust',
-  
 };
 
-// Static dependency to skill dictionary (Package manager dependencies)
 export const STATIC_DEPENDENCY_DICT = {
-  // Frontend
-  react: 'React',
-  'react-dom': 'React',
-  vue: 'Vue.js',
-  angular: 'Angular',
-  svelte: 'Svelte',
-  next: 'Next.js',
-  tailwindcss: 'Tailwind CSS',
-  redux: 'Redux',
-  // Backend / Node
-  express: 'Express.js',
-  mongoose: 'MongoDB',
-  prisma: 'Prisma',
-  sequelize: 'Sequelize',
-  typeorm: 'TypeORM',
-  nestjs: 'NestJS',
-  // Python
-  django: 'Django',
-  flask: 'Flask',
-  fastapi: 'FastAPI',
-  pandas: 'Pandas',
-  numpy: 'NumPy',
-  torch: 'PyTorch',
-  tensorflow: 'TensorFlow',
+  // GenAI & LLM Ecosystem
+  'openai': 'GenAI / OpenAI',
+  '@google/genai': 'GenAI / Gemini',
+  '@google/generative-ai': 'GenAI / Gemini',
+  'google-generativeai': 'GenAI / Gemini',
+  'langchain': 'LangChain / LLM',
+  'langchain-core': 'LangChain / LLM',
+  '@langchain/core': 'LangChain / LLM',
+  'transformers': 'GenAI / HuggingFace',
+  'ollama': 'GenAI / Ollama',
+  'pinecone-client': 'Vector DB / Pinecone',
+  'chromadb': 'Vector DB / Chroma',
+
+  // Mobile Frameworks
+  'react-native': 'React Native',
+  'expo': 'Expo / React Native',
+
+  // Core Web & Database
+  'react': 'React',
+  'express': 'Express.js',
+  'mongodb': 'MongoDB',
+  'mongoose': 'MongoDB',
+  'tailwindcss': 'Tailwind CSS',
 };
 
-// Regex patterns to match import / require statements in diffs
-export const IMPORT_REGEX_PATTERNS = [
-  // JS/TS: import ... from 'package' or require('package')
-  /import\s+.*?\s+from\s+['"]([^'"]+)['"]/g,
-  /require\(['"]([^'"]+)['"]\)/g,
-  // Python: import module or from module import ...
-  /^\s*import\s+([a-zA-Z0-9_]+)/gm,
-  /^\s*from\s+([a-zA-Z0-9_]+)\s+import/gm,
+// Regex patterns to capture GenAI imports, models, and API calls inside diff patches
+export const GENAI_INLINE_PATTERNS = [
+  { pattern: /(?:google\.generativeai|GoogleGenAI|gemini-2\.|gemini-1\.5)/i, skill: 'GenAI / Gemini' },
+  { pattern: /(?:openai|ChatOpenAI|gpt-4|gpt-3\.5)/i, skill: 'GenAI / OpenAI' },
+  { pattern: /(?:langchain|PromptTemplate|LLMChain)/i, skill: 'LangChain / LLM' },
 ];
