@@ -5,7 +5,8 @@ import jwt from 'jsonwebtoken';
 
 // 1. Redirect user to Google OAuth consent screen
 export const googleLogin = (req, res) => {
-  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+  const googleAuthUrl =
+    `https://accounts.google.com/o/oauth2/v2/auth?` +
     `client_id=${process.env.GOOGLE_CLIENT_ID}` +
     `&redirect_uri=${encodeURIComponent(process.env.GOOGLE_REDIRECT_URI)}` +
     `&response_type=code` +
@@ -19,9 +20,10 @@ export const googleLogin = (req, res) => {
 // 2. Handle Google Callback
 export const googleCallback = async (req, res) => {
   const { code } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
   if (!code) {
-    return res.redirect(`${process.env.FRONTEND_URL}/auth?error=google_auth_failed`);
+    return res.redirect(`${frontendUrl}/auth?error=google_auth_failed`);
   }
 
   try {
@@ -44,46 +46,52 @@ export const googleCallback = async (req, res) => {
     const { id: googleId, email, name, picture } = profileResponse.data;
 
     if (!email) {
-      return res.redirect(`${process.env.FRONTEND_URL}/auth?error=no_email_provided`);
+      return res.redirect(`${frontendUrl}/auth?error=no_email_provided`);
     }
 
-    // Check if user already exists (by googleId or email)
+    // Find existing user or create new one
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
 
     if (user) {
-      // Auto-link googleId if account exists via email/password
       if (!user.googleId) {
         user.googleId = googleId;
-        user.isEmailVerified = true; // Email verified by Google
+        user.isEmailVerified = true;
         await user.save();
       }
     } else {
-      // Create new user if not found
       user = await User.create({
         name: name || email.split('@')[0],
         email,
         googleId,
         isEmailVerified: true,
         profilePicture: picture || '',
+        skills: [],
+        interests: [],
+        bio: '',
       });
     }
 
-    // Issue standard JWT
+    // Issue JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    // Payload for existing frontend OAuthSuccess route
-    const userPayload = encodeURIComponent(JSON.stringify({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      githubId: user.githubId || null,
-      githubUsername: user.githubUsername || null,
-      googleId: user.googleId || null,
-    }));
+    // Build FULL user payload so frontend context gets complete data
+    const userPayload = encodeURIComponent(
+      JSON.stringify({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        bio: user.bio || '',
+        skills: user.skills || [],
+        interests: user.interests || [],
+        githubId: user.githubId || null,
+        githubUsername: user.githubUsername || null,
+        googleId: user.googleId || null,
+      })
+    );
 
-    res.redirect(`${process.env.FRONTEND_URL}/oauth-success?token=${token}&user=${userPayload}`);
+    return res.redirect(`${frontendUrl}/oauth-success?token=${token}&user=${userPayload}`);
   } catch (error) {
     console.error('Google Auth Error:', error.response?.data || error.message);
-    res.redirect(`${process.env.FRONTEND_URL}/auth?error=google_login_failed`);
+    return res.redirect(`${frontendUrl}/auth?error=google_login_failed`);
   }
 };

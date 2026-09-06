@@ -1,7 +1,6 @@
 import { createContext, useContext,useState,useEffect,type ReactNode} from "react";
 import type { AuthUser } from "../types/AuthUser";
 import socket from "../socket";
-import api from "../services/api";
 
 interface AuthContextType{
     user: AuthUser | null;

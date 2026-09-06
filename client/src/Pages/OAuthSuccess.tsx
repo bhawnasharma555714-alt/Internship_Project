@@ -1,32 +1,41 @@
-import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "../Context/AuthContext";
+// Pages/OAuthSuccess.tsx
+import { useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../Context/AuthContext';
 
-function OAuthSuccess() {
+export default function OAuthSuccess() {
   const [searchParams] = useSearchParams();
-  const { login } = useAuth();
   const navigate = useNavigate();
+  const { updateUser } = useAuth();
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    const userParam = searchParams.get("user");
+    const token = searchParams.get('token');
+    const userString = searchParams.get('user');
 
-    if (token && userParam) {
+    if (token && userString) {
       try {
-        const user = JSON.parse(decodeURIComponent(userParam));
-        login(token, user);
-        navigate("/");
+        const parsedUser = JSON.parse(decodeURIComponent(userString));
+        
+        // 1. Store token in localStorage
+        localStorage.setItem('token', token);
+        
+        // 2. Store user in AuthContext & localStorage
+        updateUser(parsedUser);
+
+        // 3. Navigate straight to profile
+        navigate('/profile', { replace: true });
       } catch (err) {
-        console.error("Failed to parse OAuth user data:", err);
-        navigate("/login?error=oauth_parse_failed");
+        console.error('Failed to parse OAuth user payload:', err);
+        navigate('/login', { replace: true });
       }
     } else {
-      navigate("/login?error=oauth_failed");
+      navigate('/login', { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+  }, [searchParams, navigate, updateUser]);
 
-  return <p style={{ textAlign: "center", marginTop: "2rem" }}>Logging you in...</p>;
+  return (
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+      <p className="text-lg animate-pulse">Completing authentication...</p>
+    </div>
+  );
 }
-
-export default OAuthSuccess;
