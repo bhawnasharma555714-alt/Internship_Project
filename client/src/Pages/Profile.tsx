@@ -11,12 +11,10 @@ import CustomToast from "../Components/CustomToast";
 function Profile() {
   const { user, updateUser } = useAuth();
   const [bio, setBio] = useState(user?.bio || "");
-  const [skills, setSkills] = useState(user?.skills?.join(", ") || "");
-  const [interests, setInterests] = useState(
-    user?.interests?.join(", ") || ""
-  );
+  const [skills, setSkills] = useState((user?.skills || []).join(", "));
+  const [interests, setInterests] = useState((user?.interests || []).join(", "));
   const [editing, setEditing] = useState(false);
-  
+
   // GitHub Skill Insights State
   const [analysis, setAnalysis] = useState<any>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -25,6 +23,7 @@ function Profile() {
   const linked = searchParams.get("linked");
   const linkError = searchParams.get("linkError");
 
+  // Keep input fields in sync whenever user object updates
   useEffect(() => {
     if (user) {
       setBio(user.bio || "");
@@ -38,7 +37,7 @@ function Profile() {
     if (user?.githubId) {
       api.get("/github-skills")
         .then((res) => setAnalysis(res.data))
-        .catch(() => {}); // Gracefully ignore 404 if no analysis has been run yet
+        .catch(() => {});
     }
   }, [user?.githubId]);
 
@@ -111,7 +110,7 @@ function Profile() {
     }
   };
 
-  // Add a suggested skill into the main profile skills
+  // Add a suggested skill into main profile skills and sync state
   const handleAddSuggestedSkill = async (skillToAdd: string) => {
     const currentSkills = user?.skills || [];
     if (currentSkills.includes(skillToAdd)) return;
@@ -122,9 +121,12 @@ function Profile() {
       const res = await api.patch("/users/profile", {
         skills: updatedSkills,
       });
-      updateUser(res.data);
 
-      // Update local analysis state to immediately reflect skill movement
+      // Update both Context and local component state
+      updateUser(res.data);
+      setSkills(updatedSkills.join(", "));
+
+      // Update local analysis state
       if (analysis) {
         setAnalysis({
           ...analysis,
@@ -196,9 +198,13 @@ function Profile() {
                 <h3 className="text-lg font-semibold text-sky-500">Skills</h3>
               </div>
               <div className="flex flex-wrap gap-2 md:gap-3 mt-2">
-                {(user.skills || []).map((skill, index) => (
-                  <span key={`${skill}-${index}`} className="bg-sky-100 text-sky-900 px-3.5 py-1.5 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:cursor-pointer">{skill}</span>
-                ))}
+                {(user.skills || []).length > 0 ? (
+                  user.skills.map((skill, index) => (
+                    <span key={`${skill}-${index}`} className="bg-sky-100 text-sky-900 px-3.5 py-1.5 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:cursor-pointer">{skill}</span>
+                  ))
+                ) : (
+                  <p className="pl-2 text-slate-400 font-medium text-sm italic">No skills added yet.</p>
+                )}
               </div>
             </div>
 
@@ -208,9 +214,13 @@ function Profile() {
                 <h3 className="text-lg font-semibold text-sky-500">Interests</h3>
               </div>
               <div className="flex flex-wrap gap-3 mt-2">
-                {(user.interests || []).map((interest, index) => (
-                  <span key={`${interest}-${index}`} className="bg-sky-100 text-sky-900 px-4 py-1.5 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:cursor-pointer">{interest}</span>
-                ))}
+                {(user.interests || []).length > 0 ? (
+                  user.interests.map((interest, index) => (
+                    <span key={`${interest}-${index}`} className="bg-sky-100 text-sky-900 px-4 py-1.5 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:cursor-pointer">{interest}</span>
+                  ))
+                ) : (
+                  <p className="pl-2 text-slate-400 font-medium text-sm italic">No interests added yet.</p>
+                )}
               </div>
             </div>
 
