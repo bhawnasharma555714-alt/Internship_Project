@@ -15,22 +15,25 @@ export const getProfile = async(req,res) => {
     }
 }
 
-export const updateProfile = async(req,res) => {
-    try{
-        const userId = req.user.id;
-        const {bio, skills, interests} = req.body;
-        const updatedUser = await User.findByIdAndUpdate(userId,
-            {   bio:bio,
-                skills:skills,
-                interests:interests
-            }, 
-            {new:true}
-        );
-        if(!updatedUser){
-            return res.status(404).json({error:"User Not Found!!"});
-        }
-        res.status(200).json(updatedUser);
-    }catch(err){
-         res.status(500).json({error: "Server Error", e:err.message});
+// Controllers/userController.js (or wherever updateProfile lives)
+export const updateProfile = async (req, res) => {
+  try {
+    const { bio, skills, interests } = req.body;
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-}
+
+    if (bio !== undefined) user.bio = bio;
+    if (skills !== undefined) user.skills = Array.isArray(skills) ? skills : [];
+    if (interests !== undefined) user.interests = Array.isArray(interests) ? interests : [];
+
+    await user.save(); // Ensures MongoDB persists the array change
+
+    return res.json(user);
+  } catch (error) {
+    console.error("Update profile error:", error);
+    return res.status(500).json({ message: "Failed to update profile" });
+  }
+};
