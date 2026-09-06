@@ -23,7 +23,7 @@ function Profile() {
   const linked = searchParams.get("linked");
   const linkError = searchParams.get("linkError");
 
-  // Keep input fields in sync whenever user object updates
+  // Keep state synced whenever user object changes or updates
   useEffect(() => {
     if (user) {
       setBio(user.bio || "");
@@ -71,7 +71,7 @@ function Profile() {
         <CustomToast type="error" title="Update Failed" message="Unable to update your profile. Please try again." />
       ), { duration: 1800 });
     } finally {
-      setEditing(false);
+      setEditing(false); // Do NOT clear bio, skills, or interests here!
     }
   };
 
@@ -122,9 +122,7 @@ function Profile() {
         skills: updatedSkills,
       });
 
-      // Update both Context and local component state
       updateUser(res.data);
-      setSkills(updatedSkills.join(", "));
 
       // Update local analysis state
       if (analysis) {
