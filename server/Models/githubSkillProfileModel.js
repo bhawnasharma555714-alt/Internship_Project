@@ -1,6 +1,32 @@
 // Models/githubSkillProfileModel.js
 import mongoose from 'mongoose';
 
+const sourceSchema = new mongoose.Schema({
+  repoName: { type: String, required: true },
+  filePath: { type: String, required: true },
+  matchedBy: {
+    type: String,
+    enum: [
+      'extension',
+      'package_dep',
+      'python_dep',
+      'import_regex',
+      'inline_code_match', // Added for GenAI inline patterns
+      'gemini_ai_resolver', // Added for Gemini AI package resolution
+      'agile_docs',
+      'doc_files',
+      'design_artifact',
+    ],
+    required: true,
+  },
+});
+
+const evidencedSkillSchema = new mongoose.Schema({
+  skillName: { type: String, required: true },
+  confidenceScore: { type: Number, default: 1 },
+  sources: [sourceSchema],
+});
+
 const githubSkillProfileSchema = new mongoose.Schema(
   {
     userId: {
@@ -13,33 +39,18 @@ const githubSkillProfileSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    lastCommitShaProcessed: {
-      type: String,
-      default: null,
-    },
-    evidencedSkills: [
-      {
-        skillName: { type: String, required: true },
-        confidenceScore: { type: Number, default: 1 }, // Based on commit/diff occurrences
-        sources: [
-          {
-            repoName: String,
-            filePath: String,
-            matchedBy: {
-              type: String,
-              enum: ['extension', 'import_regex', 'package_dep', 'gemini'],
-            },
-          },
-        ],
-      },
-    ],
+    evidencedSkills: [evidencedSkillSchema],
     outputSummary: {
-      supportedSkills: [{ type: String }],
-      claimedOnlySkills: [{ type: String }],
-      suggestedSkills: [{ type: String }],
+      supportedSkills: [String],
+      claimedOnlySkills: [String],
+      suggestedSkills: [String],
     },
   },
   { timestamps: true }
 );
 
-export default mongoose.model('GithubSkillProfile', githubSkillProfileSchema);
+const GithubSkillProfile =
+  mongoose.models.GithubSkillProfile ||
+  mongoose.model('GithubSkillProfile', githubSkillProfileSchema);
+
+export default GithubSkillProfile;
