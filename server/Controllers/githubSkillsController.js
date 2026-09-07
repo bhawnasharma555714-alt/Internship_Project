@@ -47,6 +47,8 @@ const categorizeSkills = (userSkillsRaw = [], evidencedList = []) => {
  * Run GitHub Skill Analysis
  * GET /api/github-skills/analyze
  */
+// Controllers/githubSkillsController.js
+
 export const analyzeGithubSkills = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -54,16 +56,17 @@ export const analyzeGithubSkills = async (req, res) => {
 
     if (!user || !user.githubId || !user.githubAccessToken) {
       return res.status(400).json({
-        message: 'Please link your GitHub account before running skill analysis.',
+        error: 'GITHUB_NOT_LINKED',
+        message: 'Please link your GitHub account before running a skill analysis.',
       });
     }
 
     const existingProfile = await GithubSkillProfile.findOne({ userId });
-    const COOLDOWN_HOURS = parseInt(process.env.ANALYSIS_COOLDOWN_HOURS || '168', 10); // Default: 168h (7 days)
+    const COOLDOWN_HOURS = parseInt(process.env.ANALYSIS_COOLDOWN_HOURS || '168', 10);
     const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
-
     const isForce = req.query.force === 'true';
-    // Check Cooldown Period
+
+    // Cooldown Check
     if (existingProfile && !isForce) {
       const timeSinceLast = Date.now() - new Date(existingProfile.lastAnalyzedAt).getTime();
 
@@ -82,8 +85,17 @@ export const analyzeGithubSkills = async (req, res) => {
         });
       }
     }
+
     // Run Full Analysis Engine
     const repos = await getUserRepos(user.githubAccessToken);
+    
+    if (!repos || repos.length === 0) {
+      return res.status(404).json({
+        error: 'NO_REPOSITORIES_FOUND',
+        message: 'No public or contributed repositories found on your GitHub account.',
+      });
+    }
+
     const aggregatedEvidencedSkills = new Map();
 
     for (const repo of repos) {
@@ -136,12 +148,41 @@ export const analyzeGithubSkills = async (req, res) => {
         outputSummary: liveSummary,
       },
     });
+
   } catch (error) {
-    console.error('GitHub Skill Analysis Error:', error.message);
-    return res.status(500).json({ message: 'Failed to analyze GitHub skills.' });
+    console.error('GitHub Skill Analysis Catch Error:', error);
+
+    // 1. Token Expired or Unauthorized from GitHub API
+    if (error.message === 'GITHUB_TOKEN_EXPIRED' || error.response?.status === 401) {
+      return res.status(401).json({
+        error: 'GITHUB_TOKEN_EXPIRED',
+        message: 'Your GitHub session has expired. Please re-link your GitHub account.',
+      });
+    }
+
+    // 2. GitHub Rate Limit Exceeded
+    if (error.response?.status === 403 && error.response?.headers['x-ratelimit-remaining'] === '0') {
+      return res.status(429).json({
+        error: 'RATE_LIMIT_EXCEEDED',
+        message: 'GitHub API rate limit reached. Please wait a few minutes before trying again.',
+      });
+    }
+
+    // 3. Gemini API / Network Errors
+    if (error.message?.includes('GEMINI') || error.status === 503) {
+      return res.status(503).json({
+        error: 'AI_SERVICE_UNAVAILABLE',
+        message: 'AI skill resolution service is temporarily unavailable. Try again shortly.',
+      });
+    }
+
+    // 4. Standard Fallback Error
+    return res.status(500).json({
+      error: 'ANALYSIS_FAILED',
+      message: error.response?.data?.message || error.message || 'Failed to complete GitHub skill analysis.',
+    });
   }
 };
-
 /**
  * Fetch cached GitHub skill profile
  * GET /api/github-skills

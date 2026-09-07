@@ -106,29 +106,46 @@ function Profile() {
       toast.custom(() => (
         <CustomToast type="success" title="Analysis Complete" message={res.data.message} />
       ), { duration: 2000 });
-    } catch (err: any) {
-      toast.remove(toastId);
+     } catch (err: any) {
+    toast.remove(toastId);
 
-      // Explicit HTTP 429 Cooldown handling
-      if (err.response?.status === 429) {
-        toast.custom(() => (
-          <CustomToast
-            type="warning"
-            title="Cooldown Active"
-            message={err.response?.data?.message || "Analysis is on cooldown. Try again later or run a forced re-analysis."}
-          />
-        ), { duration: 4000 });
-        return;
-      }
+    const errorMessage = 
+      err.response?.data?.message || 
+      "Failed to complete GitHub skill analysis. Please try again.";
 
+    // Handle Token Expiration
+    if (err.response?.status === 401 && err.response?.data?.error === 'GITHUB_TOKEN_EXPIRED') {
       toast.custom(() => (
         <CustomToast
           type="error"
-          title="Analysis Failed"
-          message={err.response?.data?.message || "Failed to analyze skills."}
+          title="GitHub Session Expired"
+          message={errorMessage}
         />
-      ), { duration: 2000 });
-    } finally {
+      ), { duration: 4000 });
+      return;
+    }
+
+    // Handle Cooldown / Rate Limits
+    if (err.response?.status === 429) {
+      toast.custom(() => (
+        <CustomToast
+          type="warning"
+          title="Rate Limit / Cooldown"
+          message={errorMessage}
+        />
+      ), { duration: 4000 });
+      return;
+    }
+
+    // Generic Error Toast
+    toast.custom(() => (
+      <CustomToast
+        type="error"
+        title="Analysis Failed"
+        message={errorMessage}
+      />
+    ), { duration: 3000 });
+  } finally {
       setAnalyzing(false);
     }
   };
