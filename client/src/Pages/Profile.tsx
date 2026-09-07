@@ -115,6 +115,7 @@ function Profile() {
   };
 
   // Add a suggested skill into main profile skills and sync state
+  // Inside Pages/Profile.tsx
   const handleAddSuggestedSkill = async (skillToAdd: string) => {
     const currentSkills = user?.skills || [];
     if (currentSkills.includes(skillToAdd)) return;
@@ -122,26 +123,21 @@ function Profile() {
     const updatedSkills = [...currentSkills, skillToAdd];
 
     try {
+      // 1. Update Profile Skills in Backend
       const res = await api.patch("/users/profile", {
         skills: updatedSkills,
       });
 
+      // 2. Update local Context state
       updateUser(res.data);
+      setSkills(updatedSkills.join(", "));
 
-      // Update local analysis state
-      if (analysis) {
-        setAnalysis({
-          ...analysis,
-          outputSummary: {
-            ...analysis.outputSummary,
-            supportedSkills: [...(analysis.outputSummary?.supportedSkills || []), skillToAdd],
-            suggestedSkills: (analysis.outputSummary?.suggestedSkills || []).filter((s: string) => s !== skillToAdd),
-          },
-        });
-      }
+      // 3. Fetch dynamically re-categorized analysis profile
+      const freshAnalysis = await api.get("/github-skills");
+      setAnalysis(freshAnalysis.data);
 
       toast.custom(() => (
-        <CustomToast type="success" title="Skill Added" message={`Added "${skillToAdd}" to your profile skills!`} />
+        <CustomToast type="success" title="Skill Added" message={`Added "${skillToAdd}" to profile and verified commits!`} />
       ), { duration: 1800 });
     } catch (err) {
       toast.custom(() => (
@@ -149,7 +145,6 @@ function Profile() {
       ), { duration: 1800 });
     }
   };
-
   if (!user) {
     return (
       <Layout>
