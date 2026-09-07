@@ -14,6 +14,7 @@ function Project(){
     const [error,setError] = useState("");
     const [search,setSearch] = useState("");
     const [loading, setLoading] = useState(true);
+    
     useEffect(()=>{
         getProjects()
     },[]);

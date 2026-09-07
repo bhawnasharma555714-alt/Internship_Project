@@ -4,6 +4,45 @@ import GithubSkillProfile from '../Models/githubSkillProfileModel.js';
 import { getUserRepos, getUserCommits, getCommitDiff } from '../utils/githubApiClient.js';
 import { extractSkillsFromDiffFiles } from '../utils/skillAnalyzer.js';
 
+// Weight mapping for confidence calculation
+const getSourceWeight = (matchedBy) => {
+  switch (matchedBy) {
+    case 'package_dep':
+    case 'python_dep':
+      return 40; // High confidence (explicit dependency declaration)
+    case 'import_regex':
+      return 25; // Direct import statement
+    case 'inline_code_match':
+      return 15; // Code snippet match
+    case 'gemini_ai_resolver':
+      return 15; // AI resolved package
+    case 'extension':
+      return 10; // File extension present
+    default:
+      return 5;
+  }
+};
+
+// Calculate normalized 0-100% confidence score per skill
+const processEvidencedSkills = (evidencedList = []) => {
+  return evidencedList.map((item) => {
+    let rawScore = 0;
+    const sources = item.sources || [];
+
+    sources.forEach((src) => {
+      rawScore += getSourceWeight(src.matchedBy);
+    });
+
+    const confidenceScore = Math.min(Math.round(rawScore), 100);
+
+    return {
+      skillName: item.skillName,
+      confidenceScore: confidenceScore || item.confidenceScore || 10,
+      sources: item.sources,
+    };
+  });
+};
+
 // Helper function to dynamically calculate categories based on current user skills
 const categorizeSkills = (userSkillsRaw = [], evidencedList = []) => {
   const userSkillsLower = userSkillsRaw.map((s) => s.trim().toLowerCase());
@@ -44,11 +83,38 @@ const categorizeSkills = (userSkillsRaw = [], evidencedList = []) => {
 };
 
 /**
+ * Fetch cached GitHub skill profile
+ * GET /api/github-skills
+ */
+export const getGithubSkillProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    const profile = await GithubSkillProfile.findOne({ userId: req.user.id });
+
+    if (!profile) {
+      return res.status(404).json({ message: 'No skill analysis found.' });
+    }
+
+    const processedEvidenced = processEvidencedSkills(profile.evidencedSkills || []);
+    const liveSummary = categorizeSkills(user.skills || [], processedEvidenced);
+
+    const profileData = profile.toObject ? profile.toObject() : profile;
+
+    return res.json({
+      ...profileData,
+      evidencedSkills: processedEvidenced,
+      outputSummary: liveSummary,
+    });
+  } catch (error) {
+    console.error('Error retrieving skill profile:', error.message);
+    return res.status(500).json({ message: 'Error retrieving skill profile.' });
+  }
+};
+
+/**
  * Run GitHub Skill Analysis
  * GET /api/github-skills/analyze
  */
-// Controllers/githubSkillsController.js
-
 export const analyzeGithubSkills = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -88,7 +154,7 @@ export const analyzeGithubSkills = async (req, res) => {
 
     // Run Full Analysis Engine
     const repos = await getUserRepos(user.githubAccessToken);
-    
+
     if (!repos || repos.length === 0) {
       return res.status(404).json({
         error: 'NO_REPOSITORIES_FOUND',
@@ -127,8 +193,9 @@ export const analyzeGithubSkills = async (req, res) => {
       }
     }
 
-    const evidencedList = Array.from(aggregatedEvidencedSkills.values());
-    const liveSummary = categorizeSkills(user.skills || [], evidencedList);
+    const rawEvidencedList = Array.from(aggregatedEvidencedSkills.values());
+    const processedEvidenced = processEvidencedSkills(rawEvidencedList);
+    const liveSummary = categorizeSkills(user.skills || [], processedEvidenced);
 
     let profileToSave = existingProfile;
     if (!profileToSave) {
@@ -136,23 +203,24 @@ export const analyzeGithubSkills = async (req, res) => {
     }
 
     profileToSave.lastAnalyzedAt = new Date();
-    profileToSave.evidencedSkills = evidencedList;
+    profileToSave.evidencedSkills = processedEvidenced;
     profileToSave.outputSummary = liveSummary;
 
     await profileToSave.save();
 
+    const profileData = profileToSave.toObject ? profileToSave.toObject() : profileToSave;
+
     return res.json({
       message: 'GitHub skill analysis completed successfully.',
       profile: {
-        ...profileToSave.toObject(),
+        ...profileData,
+        evidencedSkills: processedEvidenced,
         outputSummary: liveSummary,
       },
     });
-
   } catch (error) {
     console.error('GitHub Skill Analysis Catch Error:', error);
 
-    // 1. Token Expired or Unauthorized from GitHub API
     if (error.message === 'GITHUB_TOKEN_EXPIRED' || error.response?.status === 401) {
       return res.status(401).json({
         error: 'GITHUB_TOKEN_EXPIRED',
@@ -160,15 +228,13 @@ export const analyzeGithubSkills = async (req, res) => {
       });
     }
 
-    // 2. GitHub Rate Limit Exceeded
-    if (error.response?.status === 403 && error.response?.headers['x-ratelimit-remaining'] === '0') {
+    if (error.response?.status === 403 && error.response?.headers?.['x-ratelimit-remaining'] === '0') {
       return res.status(429).json({
         error: 'RATE_LIMIT_EXCEEDED',
         message: 'GitHub API rate limit reached. Please wait a few minutes before trying again.',
       });
     }
 
-    // 3. Gemini API / Network Errors
     if (error.message?.includes('GEMINI') || error.status === 503) {
       return res.status(503).json({
         error: 'AI_SERVICE_UNAVAILABLE',
@@ -176,33 +242,9 @@ export const analyzeGithubSkills = async (req, res) => {
       });
     }
 
-    // 4. Standard Fallback Error
     return res.status(500).json({
       error: 'ANALYSIS_FAILED',
       message: error.response?.data?.message || error.message || 'Failed to complete GitHub skill analysis.',
     });
-  }
-};
-/**
- * Fetch cached GitHub skill profile
- * GET /api/github-skills
- */
-export const getGithubSkillProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    const profile = await GithubSkillProfile.findOne({ userId: req.user.id });
-
-    if (!profile) {
-      return res.status(404).json({ message: 'No skill analysis found.' });
-    }
-
-    const liveSummary = categorizeSkills(user.skills || [], profile.evidencedSkills || []);
-
-    return res.json({
-      ...profile.toObject(),
-      outputSummary: liveSummary,
-    });
-  } catch (error) {
-    return res.status(500).json({ message: 'Error retrieving skill profile.' });
   }
 };
