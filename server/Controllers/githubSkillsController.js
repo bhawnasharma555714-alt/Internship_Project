@@ -102,7 +102,7 @@ export const analyzeGithubSkills = async (req, res) => {
           commit.sha
         );
 
-        const detected = extractSkillsFromDiffFiles(files, repo.name);
+        const detected = await extractSkillsFromDiffFiles(files, repo.name);
         detected.forEach((skillItem) => {
           if (!aggregatedEvidencedSkills.has(skillItem.skillName)) {
             aggregatedEvidencedSkills.set(skillItem.skillName, skillItem);

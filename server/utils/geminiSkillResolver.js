@@ -1,54 +1,66 @@
 // utils/geminiSkillResolver.js
 import { GoogleGenAI } from '@google/genai';
-import TechDictionary from '../Models/techDictionaryModel.js';
 
-const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+// Local cache to prevent redundant API calls during a single run
+const resolvedCache = new Map();
 
 /**
- * Resolves an unknown package/dependency name to a normalized technical skill.
- * Checks global TechDictionary DB cache first; falls back to Gemini if unknown.
- * 
- * @param {String} dependencyName - The raw dependency string (e.g., "zod", "sqlalchemy")
- * @returns {Promise<String|null>} The mapped skill name or null if unresolvable
+ * Resolves unknown package names to standard skill names using Gemini
+ * @param {Array<string>} unknownPackages - List of unknown package names (e.g., ["bunyan", "sqlalchemy"])
+ * @returns {Promise<Object>} Mapping of lowercase package name -> Standardized Skill Name
  */
-export const resolveUnknownDependency = async (dependencyName) => {
-  if (!dependencyName) return null;
-  const cleanDep = dependencyName.toLowerCase().trim();
+export const resolveUnknownPackages = async (unknownPackages) => {
+  const result = {};
+  const toQuery = [];
 
-  // 1. Check Global DB Cache first (Zero Gemini Token Cost)
-  const cached = await TechDictionary.findOne({ dependencyName: cleanDep });
-  if (cached) {
-    return cached.associatedSkill;
-  }
+  // 1. Check local cache first
+  unknownPackages.forEach((pkg) => {
+    const cleanPkg = pkg.toLowerCase().trim();
+    if (resolvedCache.has(cleanPkg)) {
+      result[cleanPkg] = resolvedCache.get(cleanPkg);
+    } else {
+      toQuery.push(cleanPkg);
+    }
+  });
 
-  // If no Gemini API key is configured, exit gracefully
-  if (!ai) {
-    return null;
-  }
+  if (toQuery.length === 0) return result;
 
   try {
-    // 2. Fallback to Gemini for unknown packages using @google/genai
+    const prompt = `
+You are a developer tooling expert. Given a list of library/package names (npm, pip, crates, etc.), classify each into its standard technology name or skill category (e.g., "prisma" -> "Prisma ORM", "sqlalchemy" -> "SQLAlchemy / Python", "bunyan" -> "Node.js Logging").
+If a package is purely utility/internal or obscure, return "UNKNOWN".
+
+Packages to classify:
+${toQuery.join('\n')}
+
+Respond STRICTLY in JSON format with key-value pairs where the key is the package name and the value is the standardized skill name:
+{
+  "package_name": "Standardized Skill Name"
+}
+`;
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `You are a software engineering skill classifier. Return ONLY the primary canonical technology or framework name associated with the package "${cleanDep}" in 1 to 3 words max (e.g., "zod" -> "TypeScript", "sqlalchemy" -> "Python", "framer-motion" -> "React"). If it is a generic utility with no clear primary skill, return "UNKNOWN". Do not include quotes, punctuation, or extra words.`,
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      },
     });
 
-    const resolvedSkill = response.text?.trim();
+    const parsedMappings = JSON.parse(response.text || '{}');
 
-    if (!resolvedSkill || resolvedSkill.toUpperCase() === 'UNKNOWN') {
-      return null;
-    }
-
-    // 3. Cache the resolved result globally so cost is paid once across all users
-    await TechDictionary.create({
-      dependencyName: cleanDep,
-      associatedSkill: resolvedSkill,
-      resolvedBy: 'gemini',
+    // 2. Populate result and update cache
+    Object.entries(parsedMappings).forEach(([pkg, skillName]) => {
+      if (skillName && skillName !== 'UNKNOWN') {
+        result[pkg] = skillName;
+        resolvedCache.set(pkg, skillName);
+      }
     });
-
-    return resolvedSkill;
   } catch (error) {
-    console.error(`Gemini resolution error for dependency "${cleanDep}":`, error.message);
-    return null;
+    console.error('Gemini Skill Resolver Error:', error.message);
   }
+
+  return result;
 };

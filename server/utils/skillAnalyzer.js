@@ -1,8 +1,10 @@
 // utils/skillAnalyzer.js
 import { EXTENSION_MAP, STATIC_DEPENDENCY_DICT, GENAI_INLINE_PATTERNS } from './skillMappings.js';
+import { resolveUnknownPackages } from './geminiSkillResolver.js';
 
-export const extractSkillsFromDiffFiles = (files, repoName) => {
+export const extractSkillsFromDiffFiles = async (files, repoName) => {
   const detectedSkillsMap = new Map();
+  const unknownPackages = new Set();
 
   files.forEach((file) => {
     const filename = file.filename || '';
@@ -10,7 +12,7 @@ export const extractSkillsFromDiffFiles = (files, repoName) => {
     const lowerFilename = filename.toLowerCase();
     const fileExt = filename.split('.').pop()?.toLowerCase();
 
-    // 1. File Extension Detection (.kt, .py, .ipynb, .tsx, etc.)
+    // 1. Extension Detection
     if (fileExt && EXTENSION_MAP[fileExt]) {
       addDetectedSkill(detectedSkillsMap, EXTENSION_MAP[fileExt], {
         repoName,
@@ -19,7 +21,7 @@ export const extractSkillsFromDiffFiles = (files, repoName) => {
       });
     }
 
-    // 2. Node.js dependency parsing (package.json)
+    // 2. npm package.json parsing
     if (lowerFilename.endsWith('package.json')) {
       const addedDeps = extractAddedNpmDependencies(patch);
       addedDeps.forEach((dep) => {
@@ -29,11 +31,13 @@ export const extractSkillsFromDiffFiles = (files, repoName) => {
             filePath: filename,
             matchedBy: 'package_dep',
           });
+        } else {
+          unknownPackages.add(dep);
         }
       });
     }
 
-    // 3. Python dependency parsing (requirements.txt / pyproject.toml / Pipfile)
+    // 3. Python dependency parsing
     if (
       lowerFilename.endsWith('requirements.txt') ||
       lowerFilename.endsWith('pyproject.toml') ||
@@ -47,11 +51,13 @@ export const extractSkillsFromDiffFiles = (files, repoName) => {
             filePath: filename,
             matchedBy: 'python_dep',
           });
+        } else {
+          unknownPackages.add(dep);
         }
       });
     }
 
-    // 4. Inline GenAI Code & Prompt Pattern Matching
+    // 4. Inline GenAI Code & Pattern Matching
     if (patch) {
       GENAI_INLINE_PATTERNS.forEach(({ pattern, skill }) => {
         if (pattern.test(patch)) {
@@ -64,6 +70,21 @@ export const extractSkillsFromDiffFiles = (files, repoName) => {
       });
     }
   });
+
+  // 5. Query Gemini AI for unknown packages
+  if (unknownPackages.size > 0) {
+    const resolvedMap = await resolveUnknownPackages(Array.from(unknownPackages));
+    Object.entries(resolvedMap).forEach(([dep, skillName]) => {
+      files.forEach((file) => {
+        const filename = file.filename || '';
+        addDetectedSkill(detectedSkillsMap, skillName, {
+          repoName,
+          filePath: filename,
+          matchedBy: 'gemini_ai_resolver',
+        });
+      });
+    });
+  }
 
   return Array.from(detectedSkillsMap.values());
 };
