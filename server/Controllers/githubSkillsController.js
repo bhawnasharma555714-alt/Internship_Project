@@ -4,11 +4,10 @@ import GithubSkillProfile from '../Models/githubSkillProfileModel.js';
 import { getUserRepos, getUserCommits, getCommitDiff } from '../utils/githubApiClient.js';
 import { extractSkillsFromDiffFiles } from '../utils/skillAnalyzer.js';
 
-// Helper function to dynamically calculate the 3 categories based on CURRENT user skills
+// Helper function to dynamically calculate categories based on current user skills
 const categorizeSkills = (userSkillsRaw = [], evidencedList = []) => {
   const userSkillsLower = userSkillsRaw.map((s) => s.trim().toLowerCase());
 
-  // Map of evidenced skill names (lowercase -> canonical formatted name)
   const evidencedMap = new Map();
   evidencedList.forEach((ev) => {
     evidencedMap.set(ev.skillName.toLowerCase(), ev.skillName);
@@ -17,7 +16,6 @@ const categorizeSkills = (userSkillsRaw = [], evidencedList = []) => {
   const supportedSkills = [];
   const claimedOnlySkills = [];
 
-  // 1. Check user's claimed profile skills against evidence
   userSkillsRaw.forEach((userSkill) => {
     const trimmed = userSkill.trim();
     if (!trimmed) return;
@@ -30,7 +28,6 @@ const categorizeSkills = (userSkillsRaw = [], evidencedList = []) => {
     }
   });
 
-  // 2. Suggested Skills = Found in commits BUT NOT in user's claimed skills
   const suggestedSkills = [];
   evidencedList.forEach((ev) => {
     const evLower = ev.skillName.toLowerCase();
@@ -44,31 +41,6 @@ const categorizeSkills = (userSkillsRaw = [], evidencedList = []) => {
     claimedOnlySkills: [...new Set(claimedOnlySkills)],
     suggestedSkills: [...new Set(suggestedSkills)],
   };
-};
-
-/**
- * Fetch cached GitHub skill analysis for logged-in user
- * GET /api/github-skills
- */
-export const getGithubSkillProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    const profile = await GithubSkillProfile.findOne({ userId: req.user.id });
-
-    if (!profile) {
-      return res.status(404).json({ message: 'No skill analysis found.' });
-    }
-
-    // DYNAMIC RE-CATEGORIZATION: Recalculate categories against latest user.skills
-    const liveSummary = categorizeSkills(user.skills || [], profile.evidencedSkills || []);
-
-    return res.json({
-      ...profile.toObject(),
-      outputSummary: liveSummary,
-    });
-  } catch (error) {
-    return res.status(500).json({ message: 'Error retrieving skill profile.' });
-  }
 };
 
 /**
@@ -86,26 +58,31 @@ export const analyzeGithubSkills = async (req, res) => {
       });
     }
 
-    let existingProfile = await GithubSkillProfile.findOne({ userId });
-    const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+    const existingProfile = await GithubSkillProfile.findOne({ userId });
+    const COOLDOWN_HOURS = parseInt(process.env.ANALYSIS_COOLDOWN_HOURS || '168', 10); // Default: 168h (7 days)
+    const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
 
-    // Cache check
-    if (existingProfile && !req.query.force) {
+    const isForce = req.query.force === 'true';
+    // Check Cooldown Period
+    if (existingProfile && !isForce) {
       const timeSinceLast = Date.now() - new Date(existingProfile.lastAnalyzedAt).getTime();
+
       if (timeSinceLast < COOLDOWN_MS) {
-        const liveSummary = categorizeSkills(user.skills || [], existingProfile.evidencedSkills || []);
-        return res.json({
-          fromCache: true,
-          message: 'Retrieved skill analysis from cache.',
-          profile: {
-            ...existingProfile.toObject(),
-            outputSummary: liveSummary,
-          },
+        const remainingMs = COOLDOWN_MS - timeSinceLast;
+        const remainingHours = Math.ceil(remainingMs / (1000 * 60 * 60));
+        const remainingDays = Math.ceil(remainingHours / 24);
+
+        const timeDisplay = COOLDOWN_HOURS >= 24 
+          ? `${remainingDays} day(s)` 
+          : `${remainingHours} hour(s)`;
+
+        return res.status(429).json({
+          error: 'COOLDOWN_ACTIVE',
+          message: `Analysis cooldown active. Please wait ${timeDisplay} before re-analyzing or run a forced analysis.`,
         });
       }
     }
-
-    // Fetch repositories and commits
+    // Run Full Analysis Engine
     const repos = await getUserRepos(user.githubAccessToken);
     const aggregatedEvidencedSkills = new Map();
 
@@ -141,26 +118,50 @@ export const analyzeGithubSkills = async (req, res) => {
     const evidencedList = Array.from(aggregatedEvidencedSkills.values());
     const liveSummary = categorizeSkills(user.skills || [], evidencedList);
 
-    if (!existingProfile) {
-      existingProfile = new GithubSkillProfile({ userId });
+    let profileToSave = existingProfile;
+    if (!profileToSave) {
+      profileToSave = new GithubSkillProfile({ userId });
     }
 
-    existingProfile.lastAnalyzedAt = new Date();
-    existingProfile.evidencedSkills = evidencedList;
-    existingProfile.outputSummary = liveSummary;
+    profileToSave.lastAnalyzedAt = new Date();
+    profileToSave.evidencedSkills = evidencedList;
+    profileToSave.outputSummary = liveSummary;
 
-    await existingProfile.save();
+    await profileToSave.save();
 
     return res.json({
-      fromCache: false,
       message: 'GitHub skill analysis completed successfully.',
       profile: {
-        ...existingProfile.toObject(),
+        ...profileToSave.toObject(),
         outputSummary: liveSummary,
       },
     });
   } catch (error) {
     console.error('GitHub Skill Analysis Error:', error.message);
     return res.status(500).json({ message: 'Failed to analyze GitHub skills.' });
+  }
+};
+
+/**
+ * Fetch cached GitHub skill profile
+ * GET /api/github-skills
+ */
+export const getGithubSkillProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    const profile = await GithubSkillProfile.findOne({ userId: req.user.id });
+
+    if (!profile) {
+      return res.status(404).json({ message: 'No skill analysis found.' });
+    }
+
+    const liveSummary = categorizeSkills(user.skills || [], profile.evidencedSkills || []);
+
+    return res.json({
+      ...profile.toObject(),
+      outputSummary: liveSummary,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error retrieving skill profile.' });
   }
 };

@@ -91,6 +91,8 @@ function Profile() {
   };
 
   // Run GitHub Skill Analysis
+  // Inside Pages/Profile.tsx
+
   const handleRunAnalysis = async (force = false) => {
     setAnalyzing(true);
     const toastId = toast.custom(() => (
@@ -106,8 +108,25 @@ function Profile() {
       ), { duration: 2000 });
     } catch (err: any) {
       toast.remove(toastId);
+
+      // Explicit HTTP 429 Cooldown handling
+      if (err.response?.status === 429) {
+        toast.custom(() => (
+          <CustomToast
+            type="warning"
+            title="Cooldown Active"
+            message={err.response?.data?.message || "Analysis is on cooldown. Try again later or run a forced re-analysis."}
+          />
+        ), { duration: 4000 });
+        return;
+      }
+
       toast.custom(() => (
-        <CustomToast type="error" title="Analysis Failed" message={err.response?.data?.message || "Failed to analyze skills."} />
+        <CustomToast
+          type="error"
+          title="Analysis Failed"
+          message={err.response?.data?.message || "Failed to analyze skills."}
+        />
       ), { duration: 2000 });
     } finally {
       setAnalyzing(false);
