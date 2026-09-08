@@ -14,6 +14,7 @@ import { setupSocket } from "./socket/socketHandler.js";
 //Middlewares
 import {middleware} from './Middlewares/middleware.js';
 import githubSkillsRoutes from './Routes/githubSkillsRoutes.js';
+import matchmakingRoutes from './Routes/matchmakingRoutes.js';
 
 dotenv.config();
 const port = process.env.PORT || 3000;
@@ -38,6 +39,7 @@ app.use('/api/users',userRoutes);
 app.use('/api/messages', messageRoutes);
 // ... other middlewares and routes
 app.use('/api/github-skills', githubSkillsRoutes);
+app.use('/api/matchmaking', matchmakingRoutes);
 app.get("/", (req, res) => {
     res.send("Server is running!");
 });
