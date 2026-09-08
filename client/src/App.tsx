@@ -21,6 +21,7 @@ import Chat from './Pages/Chat';
 import ResetPassword from './Pages/ResetPassword';
 import ForgotPassword from './Pages/ForgotPassword';
 import OAuthSuccess from './Pages/OAuthSuccess';
+import ProjectMatchmaking from './Pages/ProjectMatchmaking';
 
 
 function App() {
@@ -53,6 +54,7 @@ function App() {
         <Route path='/forgot-password' element={<ForgotPassword/>}/>
         <Route path='/reset-password' element={<ResetPassword/>}/>
         <Route path='/oauth-success' element={<OAuthSuccess/>}/>
+        <Route path="/matchmaking" element={<ProjectMatchmaking />} />
         </Routes>
     </BrowserRouter>
   )
