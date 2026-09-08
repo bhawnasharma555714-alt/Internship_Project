@@ -1,7 +1,7 @@
 // Routes/matchmakingRoutes.js
 import express from 'express';
 import { getRecommendedProjects } from '../Controllers/matchmakingController.js';
-import { verifyToken } from '../Middleware/authMiddleWare.js';
+import { verifyToken } from '../Middlewares/authMiddleWare.js';
 
 const router = express.Router();
 
