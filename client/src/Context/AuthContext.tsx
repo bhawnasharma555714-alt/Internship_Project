@@ -1,14 +1,14 @@
 import { createContext, useContext,useState,useEffect,type ReactNode} from "react";
-import type { AuthUser } from "../types/AuthUser";
+import type { User } from "../types/AuthUser";
 import socket from "../socket";
 
 interface AuthContextType{
-    user: AuthUser | null;
+    user: User | null;
     token: string | null;
-    login: (token: string , user:AuthUser) => void;
+    login: (token: string , user:User) => void;
     logout: () => void;
     loading: boolean;
-    updateUser: (use:AuthUser) => void;
+    updateUser: (use:User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,7 +18,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({children}: AuthProviderProps){
-    const [user, setUser] = useState<AuthUser | null>(null);
+    const [user, setUser] = useState<User | null>(null);
     const [token,setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     //Restore user a fter Refresh
@@ -32,7 +32,7 @@ export function AuthProvider({children}: AuthProviderProps){
         setLoading(false);
     },[])
 
-    const login = (token: string, user:AuthUser) => {
+    const login = (token: string, user:User) => {
         localStorage.setItem("token",token);
         localStorage.setItem("user", JSON.stringify(user));
 
@@ -49,7 +49,7 @@ export function AuthProvider({children}: AuthProviderProps){
             socket.disconnect();
         }
     }
-    const updateUser = (user: AuthUser) => {
+    const updateUser = (user: User) => {
         setUser(user);
         localStorage.setItem("user", JSON.stringify(user));
     };

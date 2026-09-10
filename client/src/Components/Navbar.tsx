@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
-import { Orbit,Menu,X, Sparkle, Sparkles } from "lucide-react";
+import { Orbit,Menu,X, Sparkles } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import CustomToast from "./CustomToast";

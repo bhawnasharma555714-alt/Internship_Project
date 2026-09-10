@@ -32,7 +32,7 @@ function ProjectDetails() {
     const [applyMessage, setApplyMessage] = useState("");
 
     const navigate = useNavigate();
-    const isOwner = project?.creator.id === user?.id;
+    const isOwner = project?.creator?.id === user?.id;
 
     useEffect(() => {
         if (id) {
@@ -164,7 +164,7 @@ function ProjectDetails() {
                                 <Palette className="w-7 h-7 mt-2 text-sky-500" />
                                 <p className="text-slate-400 font-semibold text-xl pr-4 pl-4 py-2">CREATED BY</p>
                             </div>
-                            <p>{project.creator.name.toString()}</p>
+                            <p>{project.creator?.name.toString()}</p>
                         </div>
                     </section>
 

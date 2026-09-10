@@ -64,7 +64,7 @@ function Project(){
                         <div key={project.id} className="bg-slate-800 rounded-2xl shadow-lg p-6 hover:-translate-y-2 hover:shadow-xl hover:border-sky-700 transition-all duration-300 border border-slate-700">
                             <div className="flex-col">
                                 <h2 className="text-2xl font-semibold text-white truncate">{project.title}</h2>
-                                {(project.creator.id === user?.id) && (<div className="inline-flex bg-green-500/20 text-green-400 mt-3 px-3 py-2 rounded-lg font-semibold">✓ Your Project</div>)}
+                                {(project.creator?.id === user?.id) && (<div className="inline-flex bg-green-500/20 text-green-400 mt-3 px-3 py-2 rounded-lg font-semibold">✓ Your Project</div>)}
                             </div>
                             <p className="text-slate-300 mt-3 line-clamp-3">{project.desc}</p>
                             <div className="flex flex-wrap gap-2 mt-5 p-4 justify-center">
