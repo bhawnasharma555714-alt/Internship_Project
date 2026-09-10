@@ -1,14 +1,15 @@
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from './services/api';
 
-// Derive the base server origin by removing the '/api' suffix if present
 const SOCKET_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const socket = io(SOCKET_URL, {
   auth: {
     token: localStorage.getItem("token")
   },
-  transports: ["polling", "websocket"], 
+  transports: ["websocket", "polling"],
+  reconnectionAttempts: 5, // Stop infinite retries if backend is unreachable
+  reconnectionDelay: 3000,
 });
 
-export default socket;
+export default socket; 

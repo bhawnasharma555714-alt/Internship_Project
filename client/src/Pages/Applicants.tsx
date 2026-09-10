@@ -163,7 +163,7 @@ function Application() {
                     <p className="text-slate-400 text-center mt-2 md:mt-4">No one has applied to your project yet</p>
                 </div>
             ) : (
-                displayedApplications.map((application) => (
+                (displayedApplications || []).map((application) => (
                     <div key={application.id} className="max-w-3xl mx-auto border-4 border-slate-700 mt-10 p-10 rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] transition-all duration-300">
                         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                             <div>
@@ -218,7 +218,7 @@ function Application() {
                                     ) : (
                                         <div className="border-2 border-emerald-600 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                                             <ul className="list-disc list-inside space-y-2 text-slate-300">
-                                                {application.strengths.map((strength, index) => (
+                                                {(application.strengths || []).map((strength, index) => (
                                                     <li key={`${strength}-${index}`}>{strength}</li>
                                                 ))}
                                             </ul>
@@ -235,7 +235,7 @@ function Application() {
                                     ) : (
                                         <div className="border-2 border-amber-400 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                                             <ul className="list-disc list-inside space-y-2 text-slate-300">
-                                                {application.weaknesses.map((weakness, index) => (
+                                                {(application.weaknesses || []).map((weakness, index) => (
                                                     <li key={`${weakness}-${index}`}>{weakness}</li>
                                                 ))}
                                             </ul>

@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// Vite environment variable with a local fallback
+// Must point to your RENDER backend, NOT Vercel
 export const API_BASE_URL = 
-  import.meta.env.FRONTEND_URL || "https://collabconnect1.vercel.app/api";
+  import.meta.env.VITE_BACKEND_URL || "https://internship-project-backend-8lwm.onrender.com/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
