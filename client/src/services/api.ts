@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Vite environment variable with a local fallback
 export const API_BASE_URL = 
-  import.meta.env.FRONTEND_URL || "http://localhost:3000/api";
+  import.meta.env.FRONTEND_URL || "https://collabconnect1.vercel.app/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
