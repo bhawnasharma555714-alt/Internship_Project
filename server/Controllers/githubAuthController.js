@@ -5,10 +5,12 @@ dotenv.config();
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const BACKEND_URL = (process.env.BACKEND_URL || "").replace(/\/$/, "");
-const FRONTEND_URL = (process.env.FRONTEND_URL || "").replace(/\/$/, "");
 
-// ---- Existing login flow (unchanged) ----
+// Dynamic fallbacks prevent hardcoded deployed URLs during local development
+const BACKEND_URL = (process.env.BACKEND_URL || "http://localhost:3000").replace(/\/$/, "");
+const FRONTEND_URL = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+
+// ---- Existing login flow ----
 export const githubLogin = (req, res) => {
     const redirectUri = `${BACKEND_URL}/api/auth/github/callback`;
     const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user user:email repo`;
@@ -18,7 +20,7 @@ export const githubLogin = (req, res) => {
 // ---- New: link flow, requires an already-authenticated user ----
 export const githubLinkStart = (req, res) => {
     const state = jwt.sign(
-        { userId: req.user.id, purpose: "github-link" },
+        { userId: req.user.id || req.user._id, purpose: "github-link" },
         process.env.JWT_SECRET,
         { expiresIn: "10m" }
     );
@@ -29,6 +31,7 @@ export const githubLinkStart = (req, res) => {
 
 // ---- Shared helper: exchange code for token + fetch GitHub profile/email ----
 async function exchangeCodeForProfile(code) {
+    const redirectUri = `${BACKEND_URL}/api/auth/github/callback`;
     const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
@@ -36,7 +39,7 @@ async function exchangeCodeForProfile(code) {
             client_id: GITHUB_CLIENT_ID,
             client_secret: GITHUB_CLIENT_SECRET,
             code,
-            redirect_uri: `${BACKEND_URL}/api/auth/github/callback`,
+            redirect_uri: redirectUri,
         }),
     });
     const tokenData = await tokenRes.json();
@@ -46,14 +49,14 @@ async function exchangeCodeForProfile(code) {
     const accessToken = tokenData.access_token;
 
     const profileRes = await fetch("https://api.github.com/user", {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}`, "User-Agent": "NodeJS-App" },
     });
     const profile = await profileRes.json();
 
     let email = profile.email;
     if (!email) {
         const emailsRes = await fetch("https://api.github.com/user/emails", {
-            headers: { Authorization: `Bearer ${accessToken}` },
+            headers: { Authorization: `Bearer ${accessToken}`, "User-Agent": "NodeJS-App" },
         });
         const emails = await emailsRes.json();
         const primary = Array.isArray(emails) ? emails.find(e => e.primary && e.verified) : null;
@@ -99,7 +102,7 @@ export const githubCallback = async (req, res) => {
 
             // Safety check: is this GitHub account already linked to a DIFFERENT user?
             const existingLink = await User.findOne({ githubId: String(profile.id) });
-            if (existingLink && String(existingLink._id) !== decoded.userId) {
+            if (existingLink && String(existingLink._id) !== String(decoded.userId)) {
                 return res.redirect(`${FRONTEND_URL}/profile?linkError=already_linked_elsewhere`);
             }
 
@@ -116,7 +119,7 @@ export const githubCallback = async (req, res) => {
             return res.redirect(`${FRONTEND_URL}/profile?linked=true`);
         }
 
-        // ---- LOGIN MODE (existing behavior, unchanged) ----
+        // ---- LOGIN MODE ----
         let user = await User.findOne({ githubId: String(profile.id) });
 
         if (user) {

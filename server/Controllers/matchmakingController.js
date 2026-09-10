@@ -2,6 +2,7 @@
 import User from '../Models/userModel.js';
 import GithubSkillProfile from '../Models/githubSkillProfileModel.js';
 import Project from '../Models/projectModel.js'; // Assumes Project model exists with requiredSkills array
+import Application from "../Models/applicationModel.js";
 
 /**
  * Calculates a weighted match percentage between user skills and project requirements.
@@ -73,64 +74,76 @@ const calculateProjectMatch = (projectSkills = [], supportedSkillsMap = new Map(
  * Get Recommended Projects for Logged-In User
  * GET /api/matchmaking/recommendations
  */
+// Controllers/matchmakingController.js
 export const getRecommendedProjects = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
 
-    // 1. Fetch User Profile
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+    if (!userId) {
+      return res.status(401).json({ message: "User ID missing from authentication token." });
     }
 
-    // 2. Fetch Cached GitHub Skill Profile
-    const skillProfile = await GithubSkillProfile.findOne({ userId });
-
-    // Build lookup maps for fast matching
-    const supportedSkillsMap = new Map();
-    if (skillProfile && skillProfile.evidencedSkills) {
-      skillProfile.evidencedSkills.forEach((item) => {
-        supportedSkillsMap.set(item.skillName.toLowerCase(), item.confidenceScore || 50);
-      });
+    // 1. Fetch current user details
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found." });
     }
 
-    const userSkillsRaw = user.skills || [];
-    const claimedSkillsLower = userSkillsRaw.map((s) => s.trim().toLowerCase());
+    // 2. Fetch all project IDs where the user has already applied
+    const existingApplications = await Application.find({ applicant: userId }).select("project");
+    const appliedProjectIds = existingApplications.map((app) => app.project.toString());
 
-    // 3. Fetch Open Projects (Excluding projects created by the user)
-    const openProjects = await Project.find({
-      ownerId: { $ne: userId },
-      status: { $ne: 'closed' },
-    }).populate('ownerId', 'name email avatar');
+    // 3. Fetch open projects excluding:
+    //    a) Projects created by the user ($ne: userId)
+    //    b) Projects the user has already applied to ($nin: appliedProjectIds)
+    const projects = await Project.find({
+      creator: { $ne: userId },
+      _id: { $nin: appliedProjectIds },
+    }).populate("creator", "name bio email");
 
-    // 4. Calculate Match Scores
-    const recommendations = openProjects.map((project) => {
-      const projectData = project.toObject ? project.toObject() : project;
-      const requiredSkills = project.requiredSkills || [];
+    // 4. Calculate skill match metrics for each project
+    const recommendations = projects.map((project) => {
+      const requiredSkills = Array.isArray(project.requiredSkills) ? project.requiredSkills : [];
+      const userSkills = Array.isArray(currentUser.skills) ? currentUser.skills : [];
 
-      const matchAnalysis = calculateProjectMatch(
-        requiredSkills,
-        supportedSkillsMap,
-        claimedSkillsLower
+      // Cleaned arrays for case-insensitive matching
+      const userSkillsLower = userSkills.map((s) => s.trim().toLowerCase());
+
+      const matchedSkills = requiredSkills.filter((skill) =>
+        userSkillsLower.includes(skill.trim().toLowerCase())
       );
 
+      const missingSkills = requiredSkills.filter(
+        (skill) => !userSkillsLower.includes(skill.trim().toLowerCase())
+      );
+
+      // Percentage calculation rounded to nearest whole integer
+      const matchPercentage =
+        requiredSkills.length > 0
+          ? Math.round((matchedSkills.length / requiredSkills.length) * 100)
+          : 0;
+
       return {
-        project: projectData,
-        matchPercentage: matchAnalysis.matchPercentage,
-        matchedSkills: matchAnalysis.matchedSkills,
-        missingSkills: matchAnalysis.missingSkills,
+        project,
+        matchPercentage,
+        matchedSkills,
+        missingSkills,
       };
     });
 
-    // 5. Sort Projects by Match Percentage descending
+    // 5. Sort recommendations by highest match score first
     recommendations.sort((a, b) => b.matchPercentage - a.matchPercentage);
 
-    return res.json({
+    return res.status(200).json({
       count: recommendations.length,
       recommendations,
     });
   } catch (error) {
-    console.error('Matchmaking Engine Error:', error.message);
-    return res.status(500).json({ message: 'Failed to generate project recommendations.' });
+    console.error("🔥 Matchmaking Engine Error Stack:", error);
+
+    return res.status(500).json({
+      message: "Failed to generate project recommendations.",
+      error: error.message,
+    });
   }
 };

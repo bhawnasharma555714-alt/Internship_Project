@@ -1,15 +1,16 @@
 import mongoose from "mongoose";
 
 const ApplicationSchema = new mongoose.Schema({
-    applicant: { type: mongoose.Schema.Types.ObjectId,ref: "User",required: true},
-    project: { type: mongoose.Schema.Types.ObjectId,ref: "Project",required: true},
-    aiMatchScore:{type:Number , default:null},
-    aiFeedback: {type:String, default:null},
-    strengths: {type:[String], default:[]},
-    weaknesses: {type:[String], default:[]},
-    status:{type:String, enum: ["pending", "accepted", "rejected"], default:"pending"},
-    acceptedAt: {type:Date, default: null}
-})
+    applicant: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    project: { type: mongoose.Schema.Types.ObjectId, ref: "Project", required: true },
+    message: { type: String, default: "" }, // <-- Added application message
+    aiMatchScore: { type: Number, default: null },
+    aiFeedback: { type: String, default: null },
+    strengths: { type: [String], default: [] },
+    weaknesses: { type: [String], default: [] },
+    status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" },
+    acceptedAt: { type: Date, default: null }
+}, { timestamps: true });
 
 ApplicationSchema.set("toJSON", {  
   transform: (doc, ret) => {  

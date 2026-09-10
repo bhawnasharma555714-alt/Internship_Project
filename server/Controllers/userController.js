@@ -26,37 +26,31 @@ export const getProfile = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { bio, skills, interests } = req.body;
+    const userId = req.user.id || req.user._id;
+    const { bio, skills, interests, location, university, jobProfile, branch } = req.body;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          bio,
+          skills,
+          interests,
+          location,
+          university,
+          jobProfile,
+          branch,
+        },
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    if (bio !== undefined) user.bio = bio;
-    if (skills !== undefined) {
-      user.skills = Array.isArray(skills) ? skills : [];
-    }
-    if (interests !== undefined) {
-      user.interests = Array.isArray(interests) ? interests : [];
-    }
-
-    await user.save(); // Persists update directly to MongoDB Atlas/local DB
-
-    return res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      bio: user.bio,
-      skills: user.skills,
-      interests: user.interests,
-      githubId: user.githubId || null,
-      githubUsername: user.githubUsername || null,
-      googleId: user.googleId || null,
-    });
+    return res.status(200).json(updatedUser);
   } catch (error) {
-    console.error('Error updating user profile:', error.message);
-    return res.status(500).json({ message: 'Failed to update profile' });
+    return res.status(500).json({ message: "Failed to update profile", error: error.message });
   }
 };

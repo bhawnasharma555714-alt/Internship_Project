@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
-import { Orbit,Menu,X } from "lucide-react";
+import { Orbit,Menu,X, Sparkle, Sparkles } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import CustomToast from "./CustomToast";
@@ -40,6 +40,9 @@ function Navbar(){
                         {user? (
                             <>
                                 <NavLink to='/profile' className={navLinkClass}>Profile</NavLink>
+                                <NavLink to="/matchmaking" className={navLinkClass}>
+                                    <Sparkles className="w-4 h-4 text-sky-400 animate-pulse" /> AI Matchmaker
+                                </NavLink>
                                 <NavLink to='/my-projects' className={navLinkClass}>My Projects</NavLink>
                                 <NavLink to='/my-applications' className={navLinkClass}>My Applications</NavLink>
                                 <button className="bg-sky-700 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition-colors" onClick={handleLogout}>Logout</button>
@@ -57,6 +60,9 @@ function Navbar(){
 
                             {user ? (
                                 <>
+                                    <NavLink to="/matchmaking" className={mobileNavLinkClass}>
+                                    <Sparkles className="w-4 h-4 text-sky-400 animate-pulse" /> AI Matchmaker
+                                </NavLink>
                                     <NavLink to="/profile" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>Profile</NavLink>
                                     <NavLink to="/my-projects" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>My Projects</NavLink>
                                     <NavLink to="/my-applications" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>My Applications</NavLink>

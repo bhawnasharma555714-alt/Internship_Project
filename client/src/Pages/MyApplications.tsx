@@ -1,97 +1,104 @@
 import api from "../services/api";
 import { useState, useEffect } from "react";
-import type{application } from "../types/application";
+import type { application } from "../types/application";
 import Layout from "../Components/Layout";
 import Error from "../Components/Error";
 import Loader from "../Components/Loader";
-import { Search,ChevronDown, BicepsFlexed, TrendingDown,Sparkles,Users} from "lucide-react";
+import { Search, ChevronDown, BicepsFlexed, TrendingDown, Sparkles, Users, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AIAnalysisLoader from "../Components/AiAnalysisLoader";
 import toast from "react-hot-toast";
 import CustomToast from "../Components/CustomToast";
 
-function MyApplications(){
-    const [applications,setApplications] = useState<application[]>([]);
-    const [error,setError] = useState("");
-    const [loading,setLoading] = useState(true);
-    const [search,setSearch] = useState("");
-    const [statusFilter,setStatusFilter] = useState<"all" | "pending" | "accepted" | "rejected">("all");
+function MyApplications() {
+    const [applications, setApplications] = useState<application[]>([]);
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "accepted" | "rejected">("all");
     const [analyzingId, setAnalyzingId] = useState<string | null>(null);
     const [showLoader, setShowLoader] = useState(false);
     const [loaderState, setLoaderState] = useState<"loading" | "success" | "error">("loading");
     const [loaderMessage, setLoaderMessage] = useState("");
     const [currentApplicationId, setCurrentApplicationId] = useState("");
     const navigate = useNavigate();
-    useEffect(()=>{
-        getMyApplications();
-    },[])
 
-    const getMyApplications = async() => {
-        try{
+    useEffect(() => {
+        getMyApplications();
+    }, []);
+
+    const getMyApplications = async () => {
+        try {
             const res = await api.get('/applications/my');
             setApplications(res.data);
-        }catch(err:unknown){
+        } catch (err: unknown) {
             console.log(err);
             setError("Failed to fetch your applications");
-        }finally{
+        } finally {
             setLoading(false);
         }
-    }
-    const deleteApplication = async(id:string) => {
+    };
+
+    const deleteApplication = async (id: string) => {
         const confirmDelete = window.confirm("Are you sure you want to delete this Application?");
-        if(!confirmDelete) return;
+        if (!confirmDelete) return;
         const toastId = toast.custom(
-                <CustomToast type="info" title="Withdrawing Application" message="Withdrawal in process..."/>
-            ,{duration:Infinity})
-        try{
+            <CustomToast type="info" title="Withdrawing Application" message="Withdrawal in process..." />,
+            { duration: Infinity }
+        );
+        try {
             await api.delete(`/applications/${id}`);
-            setApplications((prev) => prev.filter((application)=>application.id !== id));
+            setApplications((prev) => prev.filter((application) => application.id !== id));
             toast.remove(toastId);
             toast.custom(
-                <CustomToast type="success" title="Application Withdrawn" message="Your application has been withdrawn successfully."/>
-            ,{duration:1200})
-        }catch(err){
+                <CustomToast type="success" title="Application Withdrawn" message="Your application has been withdrawn successfully." />,
+                { duration: 1200 }
+            );
+        } catch (err) {
             toast.remove(toastId);
             toast.custom(
-                <CustomToast type="error" title="Withdrawal Failed" message="Failed to withdraw your application. Please try again!"/>
-            ,{duration:1200})
-        }finally {
+                <CustomToast type="error" title="Withdrawal Failed" message="Failed to withdraw your application. Please try again!" />,
+                { duration: 1200 }
+            );
+        } finally {
             setAnalyzingId(null);
         }
-    }
+    };
 
-    const handleAnalyze = async(applicationId : string) => {
+    const handleAnalyze = async (applicationId: string) => {
         setCurrentApplicationId(applicationId);
         setAnalyzingId(applicationId);
         setShowLoader(true);
         setLoaderState("loading");
         setLoaderMessage("Analyzing your profile...");
 
-        try{
+        try {
             const response = await api.patch(`/applications/${applicationId}/analyze`);
-            setApplications(prev => prev.map(app => app.id === applicationId ? response.data : app))
+            setApplications(prev => prev.map(app => app.id === applicationId ? response.data : app));
             setLoaderState("success");
-            setTimeout(() => {setShowLoader(false);}, 1000)
-        }catch(err:any){
+            setTimeout(() => { setShowLoader(false); }, 1000);
+        } catch (err: any) {
             setLoaderState("error");
             setLoaderMessage(err.response?.data?.error || "Something went wrong.");
             console.log(err);
-        }finally{
+        } finally {
             setAnalyzingId(null);
         }
-    }
+    };
 
     const displayedApplications = applications
-        .filter((application)=>
-            application.project?.title ?? "".toLowerCase().includes(search.toLowerCase())
+        .filter((application) =>
+            (application.project?.title ?? "").toLowerCase().includes(search.toLowerCase())
         )
-        .filter((application)=>{
-            if(statusFilter === "all") return true;
+        .filter((application) => {
+            if (statusFilter === "all") return true;
             return application.status === statusFilter;
-        })
-    if(loading) return <Loader/>
-    if(error) return <Error className="h-50 w-50 md:h-80 md:w-80" error={error}/>
-    return(
+        });
+
+    if (loading) return <Loader />;
+    if (error) return <Error className="h-50 w-50 md:h-80 md:w-80" error={error} />;
+
+    return (
         <Layout>
             {showLoader && (
                 <AIAnalysisLoader
@@ -104,116 +111,136 @@ function MyApplications(){
             <h1 className="text-4xl md:text-5xl font-medium text-white text-center">My Applications</h1>
             <p className="mt-4 text-xl text-slate-400 text-center">Track all your submitted applications</p>
             <p className="text-white text-center p-4">{applications.length} application{applications.length !== 1 && "s"}</p>
+            
             <div className="flex justify-center mt-8">
                 <div className="relative w-full max-w-xl">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-600 w-5 h-5"/>
-                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search Application..." className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600"/>
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-600 w-5 h-5" />
+                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search Application..." className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600" />
                 </div>
             </div>
+
             <div className="flex items-center justify-center mt-4">
                 <label className="text-white font-medium whitespace-nowrap pr-2">Status :</label>
                 <div className="relative">
-                    <select value={statusFilter} onChange={(e)=>setStatusFilter(e.target.value as any)} className="appearance-none w-60 px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-sky-600">
+                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="appearance-none w-60 px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-sky-600">
                         <option value="all">All</option>
                         <option value="pending">Pending</option>
                         <option value="accepted">Accepted</option>
                         <option value="rejected">Rejected</option>
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"/>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 </div>
             </div>
+
             <div className="w-fit mx-auto mt-4 flex items-center gap-2">
-                <Users className="text-sky-500"/>
+                <Users className="text-sky-500" />
                 <p className="text-white text-center pr-4">{displayedApplications.length} application{displayedApplications.length !== 1 && "s"} found</p>
             </div>
-            {(displayedApplications.length === 0 && statusFilter === "all") && <div className="flex justify-center"><button className="bg-sky-700 font-medium mt-4 text-white px-6 py-3 rounded-lg hover:bg-sky-600 transition-colors" onClick={()=>navigate('/projects')}>Browse Projects</button></div>}
-            {displayedApplications.map((application)=>(
-                <div key={application.id} className="max-w-2xl lg:max-w-3xl mx-auto border-4 border-slate-700 mt-10 p-10 rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] transition-all duration-300">
 
+            {(displayedApplications.length === 0 && statusFilter === "all") && (
+                <div className="flex justify-center">
+                    <button className="bg-sky-700 font-medium mt-4 text-white px-6 py-3 rounded-lg hover:bg-sky-600 transition-colors" onClick={() => navigate('/projects')}>Browse Projects</button>
+                </div>
+            )}
+
+            {displayedApplications.map((application) => (
+                <div key={application.id} className="max-w-2xl lg:max-w-3xl mx-auto border-4 border-slate-700 mt-10 p-10 rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] transition-all duration-300">
                     <h2 className="text-2xl md:text-4xl font-bold text-white">{application.project.title}</h2>
 
                     <div className="mt-2 md:mt-6">
                         <div className="flex gap-3">
                             <p className="text-slate-400 font-medium pr-2 mt-1 py-1">AI Match Score</p>
                             <span className={`inline-block px-5 py-2 rounded-full font-semibold ${
-                                    (application.aiMatchScore ?? 0) >= 80
-                                        ? "bg-green-500/20 text-green-400"
-                                        : (application.aiMatchScore ?? 0)
-                                        ? "bg-yellow-500/20 text-yellow-400"
-                                        : "bg-red-500/20 text-red-400"}`}>
+                                (application.aiMatchScore ?? 0) >= 80
+                                    ? "bg-green-500/20 text-green-400"
+                                    : (application.aiMatchScore ?? 0)
+                                    ? "bg-yellow-500/20 text-yellow-400"
+                                    : "bg-red-500/20 text-red-400"
+                            }`}>
                                 {application.aiMatchScore ?? 0}%
                             </span>
                         </div>
                     </div>
+
+                    {/* Submitted Cover Note Section */}
+                    {application.message && (
+                        <div className="mt-4 p-4 rounded-xl bg-slate-800/60 border border-slate-700/60">
+                            <div className="flex items-center gap-2 text-sky-400 text-sm font-semibold mb-1">
+                                <MessageSquare className="w-4 h-4" /> Your Cover Note / Message
+                            </div>
+                            <p className="text-slate-300 text-sm italic leading-relaxed">
+                                "{application.message}"
+                            </p>
+                        </div>
+                    )}
+
                     <div className="h-full border-b border-slate-600 pb-8 md:pb-12">
                         <div className="grid md:grid-cols-2 gap-2 md:gap-6 mt-2 md:mt-6">
                             <div className="mt-2 md:mt-4">
                                 <div className="flex flex-row mb-1">
-                                    <BicepsFlexed className="w-7 h-7 mt-2 text-emerald-500"/>
+                                    <BicepsFlexed className="w-7 h-7 mt-2 text-emerald-500" />
                                     <h3 className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Strengths</h3>
                                 </div>
-
                                 {application.strengths.length === 0 ? (
-                                        <p className="text-slate-400 italic">
-                                            AI analysis pending.
-                                        </p>
-                                    ) : (<div className="border-2 border-emerald-600 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                                            <ul className="list-disc list-inside space-y-2 text-slate-300">
-                                                {application.strengths.map((strength, index) => (
-                                                    <li key={`${strength}-${index}`}>{strength}</li>
-                                                ))}
-                                            </ul>
-                                        </div>)}
+                                    <p className="text-slate-400 italic">AI analysis pending.</p>
+                                ) : (
+                                    <div className="border-2 border-emerald-600 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                                        <ul className="list-disc list-inside space-y-2 text-slate-300">
+                                            {application.strengths.map((strength, index) => (
+                                                <li key={`${strength}-${index}`}>{strength}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
+
                             <div className="mt-2 md:mt-4">
                                 <div className="flex flex-row mb-1">
-                                    <TrendingDown className="w-7 h-7 mt-2 text-amber-400"/>
+                                    <TrendingDown className="w-7 h-7 mt-2 text-amber-400" />
                                     <p className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Areas to Improve</p>
                                 </div>
                                 {application.weaknesses.length === 0 ? (
-                                        <p className="text-slate-400 italic">
-                                            AI analysis pending.
-                                        </p>
-                                    ) : (<div className="border-2 border-amber-400 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                                            <ul className="list-disc list-inside space-y-2 text-slate-300">
-                                                {application.weaknesses.map((weakness, index) => (
-                                                    <li key={`${weakness}-${index}`}>{weakness}</li>
-                                                ))}
-                                            </ul>
-                                        </div>)}
+                                    <p className="text-slate-400 italic">AI analysis pending.</p>
+                                ) : (
+                                    <div className="border-2 border-amber-400 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                                        <ul className="list-disc list-inside space-y-2 text-slate-300">
+                                            {application.weaknesses.map((weakness, index) => (
+                                                <li key={`${weakness}-${index}`}>{weakness}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
                     <div className="mt-6 flex flex-col md:flex-row justify-between items-center mb-4">
-
                         <div className="flex flex-row items-center">
                             <p className="text-slate-400 font-medium py-2 pr-2">Application Status  </p>
                             <span className={`inline-block mt-2 px-5 py-2 rounded-full font-semibold ${
                                 application.status === "accepted"
-                                ? "bg-green-500/20 text-green-400"
-                                : application.status === "pending"
-                                ? "bg-amber-400/20 text-yellow-400"
-                                : "bg-red-500/20 text-red-400"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : application.status === "pending"
+                                    ? "bg-amber-400/20 text-yellow-400"
+                                    : "bg-red-500/20 text-red-400"
                             }`}>
-                                {application.status.charAt(0).toUpperCase()+application.status.slice(1)}
+                                {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
                             </span>
                         </div>
 
-                        <button onClick={()=>deleteApplication(application.id)} className="mt-6 md:mt-0 px-8 py-2 rounded-lg border border-red-500/40 font-semibold text-red-400 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all duration-200">Withdraw Application</button>
+                        <button onClick={() => deleteApplication(application.id)} className="mt-6 md:mt-0 px-8 py-2 rounded-lg border border-red-500/40 font-semibold text-red-400 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all duration-200">Withdraw Application</button>
                     </div>
-                    {(application.aiMatchScore === null && application.status === "pending") && 
+
+                    {(application.aiMatchScore === null && application.status === "pending") && (
                         <div className="flex flex-row gap-2 mt-10 justify-center md:justify-start">
-                            <Sparkles className="w-8 h-9 text-purple-700 hover:text-purple-600 mt-1"/>
-                            <button  disabled={analyzingId === application.id} className="md:mt-0 px-8 py-3 font-semibold italic rounded-lg bg-purple-800 text-white hover:bg-purple-700 transition-all duration-200" onClick={() => handleAnalyze(application.id)}>{analyzingId === application.id ? "Analyzing...":"Analyze using AI"}</button>
+                            <Sparkles className="w-8 h-9 text-purple-700 hover:text-purple-600 mt-1" />
+                            <button disabled={analyzingId === application.id} className="md:mt-0 px-8 py-3 font-semibold italic rounded-lg bg-purple-800 text-white hover:bg-purple-700 transition-all duration-200" onClick={() => handleAnalyze(application.id)}>{analyzingId === application.id ? "Analyzing..." : "Analyze using AI"}</button>
                         </div>
-                    }
+                    )}
                 </div>
             ))}
-
         </Layout>
     );
 }
 
 export default MyApplications;
-

@@ -3,12 +3,12 @@ export interface project{
     id : string;
     title: string;
     desc : string;
-    requiredSkills: [string];
+    requiredSkills: string[];
     membersRequired: number;
-    creator: {
+    creator?: {
         id:string;
         name:string;
-        bio:string
-    }
+        bio?:string
+    };
     applicantCount: number;
 }

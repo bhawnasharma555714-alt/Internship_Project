@@ -1,8 +1,11 @@
-import axios from "axios";
+import axios from 'axios';
+
+// Vite environment variable with a local fallback
+export const API_BASE_URL = 
+  import.meta.env.FRONTEND_URL || "http://localhost:3000/api";
 
 const api = axios.create({
-  baseURL: "https://internship-project-backend-8lwm.onrender.com/api",
-  // baseURL: "http://localhost:3000/api" //local backend link
+  baseURL: API_BASE_URL,
 });
 
 api.interceptors.request.use((config) => {

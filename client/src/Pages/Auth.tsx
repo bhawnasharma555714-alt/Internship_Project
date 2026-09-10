@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import CustomToast from "../Components/CustomToast";
 import { useSearchParams } from "react-router-dom";
+import { API_BASE_URL } from '../services/api';
 
 function Auth() {
   const { login } = useAuth();
@@ -168,7 +169,8 @@ function Auth() {
               <span className="text-slate-500 text-sm">OR</span>
               <div className="flex-1 h-px bg-slate-700"></div>
           </div>
-          <a  href="https://internship-project-backend-8lwm.onrender.com/api/auth/google"
+          <a 
+            href={`${API_BASE_URL}/auth/google`}
             className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-950 border border-slate-700 text-white font-semibold py-3 rounded-lg transition-colors mb-3"
           >
             <img 
@@ -179,7 +181,7 @@ function Auth() {
             Continue with Google
           </a>
           <a
-            href="https://internship-project-backend-8lwm.onrender.com/api/auth/github"
+            href={`${API_BASE_URL}/auth/github`}
             className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-950 border border-slate-700 text-white font-semibold py-3 rounded-lg transition-colors"
           ><img 
             src="https://unpkg.com/simple-icons@v11/icons/github.svg" 

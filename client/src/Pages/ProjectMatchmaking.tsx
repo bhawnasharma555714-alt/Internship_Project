@@ -1,292 +1,343 @@
-// Pages/ProjectMatchmaking.tsx
 import React, { useState, useEffect } from 'react';
-import api from '../services/api';
-import toast from 'react-hot-toast';
-import CustomToast from '../Components/CustomToast';
-import {
-  Sparkles,
-  CheckCircle,
-  AlertCircle,
-  Filter,
-  Search,
-  ExternalLink,
-  ShieldCheck,
-  Briefcase,
-  User,
-  RefreshCw,
+import type { FormEvent } from 'react';
+import { 
+  Sparkles, 
+  Search, 
+  CheckCircle2, 
+  AlertCircle, 
+  ExternalLink, 
+  RefreshCw, 
+  Send, 
+  X,
+  Check
 } from 'lucide-react';
+import api from '../services/api';
+import type { project as Project } from '../types/project';
 
-interface MatchedSkill {
-  skillName: string;
-  type: 'supported' | 'claimed';
-  confidenceScore: number;
-}
-
-interface Recommendation {
-  project: {
-    _id: string;
-    title: string;
-    description: string;
-    requiredSkills: string[];
-    status: string;
-    ownerId?: {
-      name: string;
-      email: string;
-    };
-    createdAt: string;
-  };
+export interface RecommendationItem {
+  project: Project;
   matchPercentage: number;
-  matchedSkills: MatchedSkill[];
+  matchedSkills: string[];
   missingSkills: string[];
 }
 
-export default function ProjectMatchmaking() {
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [filteredRecs, setFilteredRecs] = useState<Recommendation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [minMatchFilter, setMinMatchFilter] = useState<number>(0);
+export interface RecommendationResponse {
+  count: number;
+  recommendations: RecommendationItem[];
+}
 
-  const fetchRecommendations = async () => {
+interface Application {
+  project: string; // Project ID
+  status: string;
+}
+
+export default function ProjectMatchmaking(): React.ReactElement {
+  const [recommendations, setRecommendations] = useState<RecommendationItem[]>([]);
+  const [userApplications, setUserApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [minMatch, setMinMatch] = useState<number>(0);
+
+  // Modal & Toast State
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [applyMessage, setApplyMessage] = useState<string>('');
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [toast, setToast] = useState<string>('');
+
+  const fetchData = async (): Promise<void> => {
     setLoading(true);
     try {
-      const res = await api.get('/matchmaking/recommendations');
-      setRecommendations(res.data.recommendations || []);
-      setFilteredRecs(res.data.recommendations || []);
-    } catch (err: any) {
-      toast.custom(
-        () => (
-          <CustomToast
-            type="error"
-            title="Matchmaking Error"
-            message={err.response?.data?.message || 'Failed to load project recommendations.'}
-          />
-        ),
-        { duration: 3000 }
-      );
+      // Fetch recommendations and existing applications in parallel
+      const [recsRes, appsRes] = await Promise.all([
+        api.get<RecommendationResponse>('/matchmaking/recommendations'),
+        api.get<Application[]>('/applications/my')
+      ]);
+
+      setRecommendations(recsRes.data.recommendations || []);
+      setUserApplications(appsRes.data || []);
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRecommendations();
+    fetchData();
   }, []);
 
-  // Filter recommendations based on search query and minimum match score
-  useEffect(() => {
-    let filtered = recommendations.filter((rec) => rec.matchPercentage >= minMatchFilter);
+  const handleApplySubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+    e.preventDefault();
+    if (!selectedProject) return;
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (rec) =>
-          rec.project.title.toLowerCase().includes(query) ||
-          rec.project.description.toLowerCase().includes(query) ||
-          rec.project.requiredSkills.some((s) => s.toLowerCase().includes(query))
-      );
+    setSubmitting(true);
+    try {
+      await api.post(`/applications/${selectedProject.id}/apply`, {
+        message: applyMessage,
+      });
+      setToast(`Application submitted for ${selectedProject.title}!`);
+      setSelectedProject(null);
+      setApplyMessage('');
+
+      // Refresh applications list to update button state immediately
+      const appsRes = await api.get<Application[]>('/applications/my');
+      setUserApplications(appsRes.data || []);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to submit application.';
+      alert(errorMsg);
+    } finally {
+      setSubmitting(false);
+      setTimeout(() => setToast(''), 4000);
     }
-
-    setFilteredRecs(filtered);
-  }, [searchQuery, minMatchFilter, recommendations]);
-
-  const getMatchMeterColor = (score: number) => {
-    if (score >= 80) return 'bg-emerald-500 text-emerald-400 border-emerald-500/30';
-    if (score >= 50) return 'bg-sky-500 text-sky-400 border-sky-500/30';
-    return 'bg-amber-500 text-amber-400 border-amber-500/30';
   };
 
-  const getMatchBadgeStyle = (score: number) => {
-    if (score >= 80) return 'bg-emerald-950/60 text-emerald-300 border-emerald-800/60';
-    if (score >= 50) return 'bg-sky-950/60 text-sky-300 border-sky-800/60';
-    return 'bg-amber-950/60 text-amber-300 border-amber-800/60';
+  // Check if user has already applied to a specific project
+  const hasApplied = (projectId: string): boolean => {
+    return userApplications.some((app) => app.project === projectId);
   };
+
+  const filteredRecommendations = recommendations.filter((item) => {
+    const titleMatch = item.project?.title?.toLowerCase().includes(searchTerm.toLowerCase());
+    const descMatch = item.project?.desc?.toLowerCase().includes(searchTerm.toLowerCase());
+    const scoreMatch = item.matchPercentage >= minMatch;
+    return (titleMatch || descMatch) && scoreMatch;
+  });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white py-10 px-4">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
-          <div>
-            <h1 className="text-3xl font-extrabold flex items-center gap-2.5">
-              <Sparkles className="w-7 h-7 text-sky-400" />
-              AI Project Matchmaker
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">
-              Projects matched to your verified GitHub commits and claimed skills.
-            </p>
-          </div>
-          <button
-            onClick={fetchRecommendations}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-sm font-semibold transition self-start md:self-auto disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 text-sky-400 ${loading ? 'animate-spin' : ''}`} />
-            Refresh Matches
-          </button>
+    <div className="min-h-screen bg-[#0B0F17] text-slate-100 p-6 md:p-12">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-5 right-5 z-50 bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-xl font-medium flex items-center gap-2 transition-all">
+          <CheckCircle2 className="w-5 h-5" />
+          <span>{toast}</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+            AI Project Matchmaker <Sparkles className="w-6 h-6 text-sky-400" />
+          </h1>
+          <p className="text-slate-400 mt-1">
+            Projects dynamically matched to your profile skills and bio.
+          </p>
         </div>
 
-        {/* Filter Toolbar */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg">
-          {/* Search Box */}
-          <div className="relative md:col-span-2">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search projects by title, description, or skill..."
-              className="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-sky-500 transition"
-            />
-          </div>
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl border border-slate-700 transition font-medium text-sm w-fit cursor-pointer"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-sky-400' : ''}`} />
+          <span>Refresh Feed</span>
+        </button>
+      </div>
 
-          {/* Min Match Filter */}
-          <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700 rounded-xl px-3 py-2">
-            <Filter className="w-4 h-4 text-sky-400 flex-shrink-0" />
-            <span className="text-xs font-semibold text-slate-300 flex-shrink-0">Min Match:</span>
-            <select
-              value={minMatchFilter}
-              onChange={(e) => setMinMatchFilter(Number(e.target.value))}
-              className="bg-transparent text-xs font-semibold text-sky-400 focus:outline-none w-full cursor-pointer"
-            >
-              <option value={0} className="bg-slate-900 text-white">All Matches (0%+)</option>
-              <option value={40} className="bg-slate-900 text-white">Fair Matches (40%+)</option>
-              <option value={70} className="bg-slate-900 text-white">Strong Matches (70%+)</option>
-            </select>
-          </div>
+      {/* Filter Toolbar */}
+      <div className="max-w-6xl mx-auto bg-[#131A29] p-4 rounded-2xl border border-slate-800 mb-8 flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="w-5 h-5 absolute left-3.5 top-3 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search projects by title, description, or skill..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-sky-500"
+          />
         </div>
 
-        {/* Loading State */}
+        <select
+          value={minMatch}
+          onChange={(e) => setMinMatch(Number(e.target.value))}
+          className="bg-[#0B0F17] border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-sky-500 cursor-pointer"
+        >
+          <option value={0}>Min Match: All Matches (0%+)</option>
+          <option value={50}>Min Match: 50%+</option>
+          <option value={75}>Min Match: 75%+</option>
+          <option value={90}>Min Match: 90%+</option>
+        </select>
+      </div>
+
+      {/* Feed List */}
+      <div className="max-w-6xl mx-auto space-y-6">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-4">
-            <RefreshCw className="w-8 h-8 text-sky-400 animate-spin" />
-            <p className="text-sm text-slate-400 font-medium">Calculating skill match percentages...</p>
+          <div className="text-center py-20 text-slate-400 space-y-3">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-sky-400" />
+            <p>Analyzing skill match scores...</p>
           </div>
-        ) : filteredRecs.length === 0 ? (
-          /* Empty State */
-          <div className="text-center py-16 bg-slate-900/50 border border-slate-800 rounded-2xl p-8 space-y-3">
-            <Briefcase className="w-10 h-10 text-slate-600 mx-auto" />
-            <h3 className="text-lg font-bold text-slate-300">No Projects Found</h3>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
-              No projects matched your active filters. Try lowering your minimum match threshold or clearing search terms.
-            </p>
+        ) : filteredRecommendations.length === 0 ? (
+          <div className="text-center py-20 bg-[#131A29] rounded-2xl border border-slate-800 text-slate-400">
+            No projects match your current filter settings.
           </div>
         ) : (
-          /* Recommendations Feed */
-          <div className="space-y-5">
-            {filteredRecs.map(({ project, matchPercentage, matchedSkills, missingSkills }) => (
+          filteredRecommendations.map(({ project, matchPercentage, matchedSkills = [], missingSkills = [] }) => {
+            const isApplied = hasApplied(project.id);
+
+            return (
               <div
-                key={project._id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 hover:border-slate-700 transition"
+                key={project.id}
+                className="bg-[#131A29] border border-slate-800 rounded-2xl p-6 shadow-xl hover:border-slate-700 transition"
               >
-                {/* Top Row: Title + Owner + Match Badge */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
-                  <div className="space-y-1">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      {project.title}
-                    </h2>
-                    <p className="text-xs text-slate-400 flex items-center gap-2">
-                      <User className="w-3.5 h-3.5 text-slate-500" />
-                      Posted by{' '}
-                      <span className="text-slate-200 font-medium">
-                        {project.ownerId?.name || 'Collaborator'}
-                      </span>
+                {/* Card Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-white tracking-wide">{project.title}</h2>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Posted by <span className="text-slate-300 font-medium">{project.creator?.name || 'Collaborator'}</span> • Needs <span className="text-sky-400 font-medium">{project.membersRequired || 1} Members</span>
                     </p>
                   </div>
 
                   {/* Match Percentage Pill */}
-                  <div className={`px-4 py-2 rounded-xl border flex items-center gap-2.5 self-start md:self-auto ${getMatchBadgeStyle(matchPercentage)}`}>
+                  <div className="flex items-center gap-1.5 bg-sky-950/80 border border-sky-500/30 text-sky-400 px-3.5 py-1.5 rounded-xl font-semibold text-sm w-fit">
                     <Sparkles className="w-4 h-4" />
-                    <span className="text-lg font-mono font-extrabold">{matchPercentage}% Match</span>
+                    <span>{matchPercentage}% Match</span>
                   </div>
                 </div>
 
-                {/* Project Description */}
-                <p className="text-sm text-slate-300 leading-relaxed">{project.description}</p>
+                {/* Description */}
+                {project.desc && (
+                  <p className="text-sm text-slate-300 mb-5 leading-relaxed">{project.desc}</p>
+                )}
 
-                {/* Match Score Meter Bar */}
-                <div className="space-y-1.5 bg-slate-800/50 p-3 rounded-xl border border-slate-800">
-                  <div className="flex justify-between items-center text-xs font-semibold">
-                    <span className="text-slate-400">Match Accuracy</span>
-                    <span className="font-mono text-slate-200">{matchPercentage} / 100</span>
+                {/* Progress Bar */}
+                <div className="mb-6">
+                  <div className="flex justify-between text-xs font-semibold text-slate-400 mb-1.5">
+                    <span>Match Accuracy</span>
+                    <span className="text-sky-400">{matchPercentage} / 100</span>
                   </div>
-                  <div className="w-full bg-slate-700/60 h-2.5 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                     <div
-                      className={`h-full transition-all duration-500 ${getMatchMeterColor(matchPercentage)}`}
+                      className="h-full bg-gradient-to-r from-sky-500 to-emerald-400 transition-all duration-500"
                       style={{ width: `${matchPercentage}%` }}
                     />
                   </div>
                 </div>
 
                 {/* Skills Breakdown Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                  {/* Matched Skills */}
-                  <div className="space-y-2 p-3 bg-slate-800/40 rounded-xl border border-slate-800">
-                    <h4 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5" /> Matched Skills ({matchedSkills.length})
-                    </h4>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {matchedSkills.length > 0 ? (
-                        matchedSkills.map((s) => (
-                          <span
-                            key={s.skillName}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${
-                              s.type === 'supported'
-                                ? 'bg-emerald-950/60 text-emerald-200 border-emerald-700/50'
-                                : 'bg-slate-800 text-slate-300 border-slate-700'
-                            }`}
-                          >
-                            <span>{s.skillName}</span>
-                            {s.type === 'supported' && (
-                              <span className="flex items-center gap-0.5 text-[10px] font-mono font-bold text-sky-400 bg-sky-950/80 px-1 rounded border border-sky-800/40">
-                                <ShieldCheck className="w-3 h-3" />
-                                {s.confidenceScore}%
-                              </span>
-                            )}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-xs text-slate-500">No skill matches found.</span>
-                      )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  {/* Matched Skills Box */}
+                  <div className="bg-[#0B0F17]/70 border border-slate-800/80 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-3">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Matched Skills ({matchedSkills.length})</span>
                     </div>
-                  </div>
-
-                  {/* Missing Skills */}
-                  <div className="space-y-2 p-3 bg-slate-800/40 rounded-xl border border-slate-800">
-                    <h4 className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5" /> Missing Skills ({missingSkills.length})
-                    </h4>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {missingSkills.length > 0 ? (
-                        missingSkills.map((skill) => (
+                    <div className="flex flex-wrap gap-2">
+                      {matchedSkills.length > 0 ? (
+                        matchedSkills.map((skill, idx) => (
                           <span
-                            key={skill}
-                            className="px-2.5 py-1 bg-amber-950/40 border border-amber-800/50 text-amber-300 text-xs font-medium rounded-lg"
+                            key={idx}
+                            className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/50 px-3 py-1 rounded-lg text-xs font-medium"
                           >
                             {skill}
                           </span>
                         ))
                       ) : (
-                        <span className="text-xs text-slate-400 font-medium">
-                          ✓ You match 100% of required skills!
-                        </span>
+                        <span className="text-xs text-slate-500 italic">No direct skill overlap</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Missing Skills Box */}
+                  <div className="bg-[#0B0F17]/70 border border-slate-800/80 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-3">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Missing Skills ({missingSkills.length})</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {missingSkills.length > 0 ? (
+                        missingSkills.map((skill, idx) => (
+                          <span
+                            key={idx}
+                            className="bg-amber-950/50 text-amber-300 border border-amber-800/50 px-3 py-1 rounded-lg text-xs font-medium"
+                          >
+                            {skill}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-emerald-400 font-medium">You possess all required skills!</span>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Action Row */}
-                <div className="pt-2 text-right">
-                  <button className="inline-flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-xs font-semibold rounded-xl text-white transition shadow-md">
-                    <span>Apply / Join Project</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
+                {/* Conditional Action Button */}
+                <div className="flex justify-end pt-2 border-t border-slate-800/60">
+                  {isApplied ? (
+                    <button
+                      disabled
+                      className="flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 font-semibold px-5 py-2.5 rounded-xl text-sm cursor-not-allowed opacity-90"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Already Applied</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setSelectedProject(project)}
+                      className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold px-5 py-2.5 rounded-xl transition text-sm shadow-lg shadow-sky-500/10 cursor-pointer"
+                    >
+                      <span>Apply / Join Project</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })
         )}
       </div>
+
+      {/* Application Modal */}
+      {selectedProject && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#131A29] border border-slate-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setSelectedProject(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl font-bold text-white mb-1">Apply to {selectedProject.title}</h3>
+            <p className="text-xs text-slate-400 mb-4">
+              Send an optional message to the project creator explaining your skills and role interest.
+            </p>
+
+            <form onSubmit={handleApplySubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Cover Note / Message <span className="text-slate-500 font-normal">(Optional)</span>
+                </label>
+                <textarea
+                  rows={4}
+                  value={applyMessage}
+                  onChange={(e) => setApplyMessage(e.target.value)}
+                  placeholder="Introduce yourself or leave blank to apply using your profile details..."
+                  className="w-full bg-[#0B0F17] border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedProject(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs transition disabled:opacity-50 cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{submitting ? 'Submitting...' : 'Send Application'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
