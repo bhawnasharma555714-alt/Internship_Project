@@ -6,7 +6,7 @@ import { generateAIMatch } from "../services/gemini.js";
 export const applyProject = async (req, res) => {
     try {
         const projectId = req.params.id;
-        const { message } = req.body; // <-- Extract message sent from frontend modal
+        const { message } = req.body;
 
         const project = await Project.findById(projectId);
         if (!project) return res.status(404).json({ error: "Project not found!!" });
@@ -20,25 +20,26 @@ export const applyProject = async (req, res) => {
         if (existingApplication) {
             return res.status(400).json({ error: "Already applied for this project" });
         }
-    
+
         const applicant = await User.findById(userId);
         if (!applicant) return res.status(404).json({ error: "User not found!!" });
 
         let aiMatchScore = null;
+        let assignedRole = "Team Contributor";
         let strengths = [];
         let weaknesses = [];
         let aiFeedback = "";
 
         try {
             console.log("Reached apply controller with message:", message);
-            
-            // Pass message into Gemini matcher
+
             const aiResult = await generateAIMatch(applicant, project, message);
-            
+
             aiMatchScore = aiResult.score;
-            strengths = aiResult.strengths;
-            weaknesses = aiResult.weaknesses;
-            aiFeedback = aiResult.feedback;
+            assignedRole = aiResult.assignedRole || "Team Contributor";
+            strengths = aiResult.strengths || [];
+            weaknesses = aiResult.weaknesses || [];
+            aiFeedback = aiResult.feedback || "";
         } catch (aiError) {
             console.error("Gemini Evaluation Error:", aiError.message);
         }
@@ -46,8 +47,9 @@ export const applyProject = async (req, res) => {
         const newApplication = await Application.create({
             applicant: userId,
             project: projectId,
-            message: message || "", // <-- Saved to MongoDB
+            message: message || "",
             aiMatchScore,
+            assignedRole,
             strengths,
             weaknesses,
             aiFeedback

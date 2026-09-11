@@ -182,6 +182,14 @@ function Application() {
                                 <p className="text-slate-500 font-medium mt-3">{application.applicant.bio || "No bio added."}</p>
                             </div>
                         </div>
+                        {application.assignedRole && (
+                            <span className="mt-4 bg-purple-950/80 border border-purple-500/40 text-purple-300 text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 max-w-xl">
+                                <div className="text-sm">
+                                    <span>✨ Matched Role:</span>
+                                    <span className="pl-4 text-white font-bold">{application.assignedRole}</span>
+                                </div>
+                            </span>
+                        )}
 
                         <div className="mt-4 md:mt-6">
                             <h3 className="text-white font-semibold mb-2">Skills</h3>

@@ -10,5 +10,9 @@ export interface application {
   strengths: string[];
   weaknesses: string[];
   message?:string;
+  assignedRole?: string; // <-- NEW FIELD
   status: "pending" | "accepted" | "rejected";
+  acceptedAt?: string | Date | null;
+  createdAt?: string;
+  updatedAt?: string;
 }

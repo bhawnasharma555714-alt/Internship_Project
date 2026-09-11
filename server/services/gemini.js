@@ -11,11 +11,12 @@ export async function generateAIMatch(candidate, project, userMessage = "") {
     const candidateSkills = Array.isArray(candidate.skills) ? candidate.skills.join(", ") : "";
     const candidateInterests = Array.isArray(candidate.interests) ? candidate.interests.join(", ") : "";
     const projectSkills = Array.isArray(project.requiredSkills) ? project.requiredSkills.join(", ") : "";
+    const projectRoles = project.aiAnalysis?.suggestedRoles || [];
 
     const prompt = `
 You are an AI recruitment assistant.
 
-Compare the candidate with the project requirements and evaluate how well the candidate matches the project. Also consider their cover note/application message to judge their enthusiasm and tailored approach.
+Compare the candidate with the project requirements and evaluate how well the candidate matches the project. Also consider their cover note/application message to judge their enthusiasm and tailored approach. Select the SINGLE most prominent matching role for the applicant from the project's target roles (or assign an appropriate role based on project needs).
 
 Candidate Details:
 Bio: ${candidate.bio || "N/A"}
@@ -27,11 +28,13 @@ Project Details:
 Title: ${project.title || "N/A"}
 Description: ${project.desc || project.description || "N/A"}
 Required Skills: ${projectSkills || "N/A"}
+Target Roles: ${projectRoles.length > 0 ? projectRoles.join(", ") : "General Team Contributor"}
 
 Return ONLY valid JSON in the following format:
 
 {
     "score": number,
+    "assignedRole": "Single prominent matched role (e.g. Frontend Engineer)",
     "strengths": ["strength1", "strength2"],
     "weaknesses": ["weakness1", "weakness2"],
     "feedback": "short paragraph"
@@ -39,6 +42,7 @@ Return ONLY valid JSON in the following format:
 
 Rules:
 - score must be between 0 and 100.
+- assignedRole must be a clear, concise role name.
 - strengths and weaknesses should each contain 2-4 concise points.
 - feedback should be under 60 words.
 - Do NOT include markdown formatting or backticks.
@@ -48,7 +52,7 @@ Rules:
 
     console.log("About to call Gemini with application note...");
     const response = await ai.models.generateContent({
-        model: process.env.GEMINI_MODEL,
+        model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
         contents: prompt,
     });
 
@@ -58,7 +62,7 @@ Rules:
     }
 
     const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
-    
+
     try {
         return JSON.parse(cleanedText);
     } catch (error) {

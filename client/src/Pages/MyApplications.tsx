@@ -161,6 +161,13 @@ function MyApplications() {
                             </span>
                         </div>
                     </div>
+                    {/* Inside application status card */}
+                    <div className="mt-6 flex items-center gap-4 ">
+                        <span className="text-sm text-slate-400 font-semibold uppercase">Your Matched Role:</span>
+                        <span className="text-sm font-bold text-sky-400 bg-sky-950/80 px-2.5 py-1 rounded-lg border border-sky-800/50">
+                        {application.assignedRole || "Team Contributor"}
+                        </span>
+                    </div>
 
                     {/* Submitted Cover Note Section */}
                     {application.message && (

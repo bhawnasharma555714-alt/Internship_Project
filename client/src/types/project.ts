@@ -12,3 +12,11 @@ export interface project{
     };
     applicantCount: number;
 }
+export interface AIAnalysis {
+  suggestedTitle?: string;
+  suggestedDesc?: string;
+  suggestedSkills?: string[];
+  suggestedMembers?: number;
+  suggestedRoles?: string[];
+  analyzedAt?: string | Date;
+}
