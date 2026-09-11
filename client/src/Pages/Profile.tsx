@@ -113,7 +113,7 @@ export default function Profile(): React.ReactElement {
           {/* Card Header: Avatar, Name & Edit Trigger */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-sky-400/30 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-linear-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-sky-400/30 shrink-0">
                 {user?.name ? user.name.charAt(0).toUpperCase() : <UserIcon className="w-7 h-7" />}
               </div>
               <div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import type { project } from "../types/project";
 import { Link } from "react-router-dom";
-import { Search, Users, ArrowRight, Sparkles } from "lucide-react";
+import { Search, Users, ArrowRight} from "lucide-react";
 import Layout from "../Components/Layout";
 import Loader from "../Components/Loader";
 import Error from "../Components/Error";
