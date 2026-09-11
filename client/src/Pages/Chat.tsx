@@ -6,7 +6,6 @@ import { ArrowLeft, Trash2 } from "lucide-react";
 import { useAuth } from "../Context/AuthContext";
 import api from "../services/api";
 import SkillGapSidebar from "../Components/SkillGapSidebar";
-import Project from "./Project";
 
 const Chat = () => {
     const { projectId } = useParams();
