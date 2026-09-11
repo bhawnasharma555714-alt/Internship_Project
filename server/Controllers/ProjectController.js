@@ -120,43 +120,78 @@ export const getAllProjects = async(req,res) => {
     }catch(err){
         res.status(500).json({error:"Server Error cannot find Projects", e:err.message});
     }
-}
+}   
 
-//http://localhost:3000/api/projects/:id
-export const getProjectById = async(req,res) => {
-    try{
-       const project = await Project.findById(req.params.id).populate("creator","name bio id");
-       if(!project){
-        return res.status(404).json({error:"Project not found"});
-       }
-       res.json(project);
-    }catch(err){
-        res.status(500).json({error:"Server Error : Cannot Find any Project with id #"+req.params.id});
+// GET /api/projects/:id
+export const getProjectById = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id)
+            .populate("creator", "name bio id")
+            .lean();
+
+        if (!project) {
+            return res.status(404).json({ error: "Project not found" });
+        }
+
+        // Dynamically calculate counts from Application collection
+        const acceptedCount = await Application.countDocuments({
+            project: req.params.id,
+            status: "accepted",
+        });
+
+        const totalApplicants = await Application.countDocuments({
+            project: req.params.id,
+        });
+
+        // Return project merged with calculated counters
+        const responseData = {
+            ...project,
+            acceptedCount,
+            totalApplicants,
+            activeMembers: acceptedCount + 1, // 1 Creator/Leader + Accepted Members
+        };
+
+        res.json(responseData);
+    } catch (err) {
+        console.error("Get Project By ID Error:", err);
+        res.status(500).json({
+            error: "Server Error: Cannot Find any Project with id #" + req.params.id,
+        });
     }
-}
+};
 
-export const getMyCreatedProject = async(req,res) => {
-    try{
+export const getMyCreatedProject = async (req, res) => {
+    try {
         const projects = await Project.find({ creator: req.user.id });
+
         const projectsWithCount = await Promise.all(
             projects.map(async (project) => {
+                // Count total applications
                 const applicantCount = await Application.countDocuments({
                     project: project._id,
+                });
+
+                // Count accepted applications dynamically
+                const acceptedCount = await Application.countDocuments({
+                    project: project._id,
+                    status: "accepted",
                 });
 
                 return {
                     ...project.toObject(),
                     id: project._id.toString(),
                     applicantCount,
+                    acceptedCount,
+                    activeMembers: acceptedCount + 1, // 1 Creator/Leader + Accepted Members
                 };
             })
         );
-        res.status(200).json(projectsWithCount);
-    }catch(err){
-        res.status(500).json({error:"Server Error", e:err.message});
-    }
-}
 
+        res.status(200).json(projectsWithCount);
+    } catch (err) {
+        res.status(500).json({ error: "Server Error", e: err.message });
+    }
+};
 export const deleteProject = async(req,res) => {
     try{
         const projectId = req.params.id;
