@@ -16,6 +16,29 @@ const Chat = () => {
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [projectTitle, setProjectTitle] = useState("Project Chat");
+
+    useEffect(() => {
+        if (!projectId) return;
+
+        // Fetch project title
+        const fetchProjectDetails = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const res = await api.get(`/projects/${projectId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const projectData = res.data.project || res.data;
+                if (projectData?.title) {
+                    setProjectTitle(projectData.title);
+                }
+            } catch (error) {
+                console.error("Error fetching project details:", error);
+            }
+        };
+
+        fetchProjectDetails();
+    }, [projectId]);
 
     useEffect(() => {
         if (!projectId) return;
@@ -160,11 +183,11 @@ const Chat = () => {
 
                         {/* Chat Header */}
                         <div className="bg-slate-800/70 px-6 py-5 border-b border-slate-700">
-                            <h1 className="text-2xl md:text-3xl font-bold text-white">
-                                Project Chat
+                            <h1 className="text-xl md:text-2xl font-bold text-white">
+                                {projectTitle}
                             </h1>
 
-                            <p className="text-slate-400 mt-1">
+                            <p className="text-slate-400 mt-1 text-sm">
                                 Collaborate with your project members
                             </p>
                         </div>

@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { 
-  Sparkles, 
-  Search, 
-  CheckCircle2, 
-  AlertCircle, 
-  ExternalLink, 
-  RefreshCw, 
-  Send, 
-  X,
-  Check
-} from 'lucide-react';
+import { Sparkles, Search, CheckCircle2, AlertCircle, ExternalLink, RefreshCw, Send, X,Check} from 'lucide-react';
 import api from '../services/api';
 import type { project as Project } from '../types/project';
 
@@ -114,7 +104,7 @@ export default function ProjectMatchmaking(): React.ReactElement {
       )}
 
       {/* Header */}
-      <div className="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="max-w-3xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
             AI Project Matchmaker <Sparkles className="w-6 h-6 text-sky-400" />
@@ -135,7 +125,7 @@ export default function ProjectMatchmaking(): React.ReactElement {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="max-w-6xl mx-auto bg-[#131A29] p-4 rounded-2xl border border-slate-800 mb-8 flex flex-col sm:flex-row gap-4">
+      <div className="max-w-3xl mx-auto bg-[#131A29] p-4 rounded-2xl border border-slate-800 mb-8 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="w-5 h-5 absolute left-3.5 top-3 text-slate-400" />
           <input
@@ -160,7 +150,7 @@ export default function ProjectMatchmaking(): React.ReactElement {
       </div>
 
       {/* Feed List */}
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6">
         {loading ? (
           <div className="text-center py-20 text-slate-400 space-y-3">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto text-sky-400" />

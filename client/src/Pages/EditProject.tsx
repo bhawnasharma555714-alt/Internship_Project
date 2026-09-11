@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import Layout from "../Components/Layout";
 import BackButton from "../Components/BackButton";
-import { SquarePen, Sparkles, X, Check, ArrowRight } from "lucide-react";
+import { SquarePen, Sparkles, X, Check, ArrowRight, Save } from "lucide-react";
 import toast from "react-hot-toast";
 import CustomToast from "../Components/CustomToast";
 
@@ -42,7 +42,6 @@ function EditProject() {
             setTitle(project.title || "");
             setDesc(project.desc || project.description || "");
 
-            // Robust check for skills array/string variations
             const rawSkills = project.requiredSkills || project.skillsRequired || [];
             if (Array.isArray(rawSkills)) {
                 setRequiredSkills(rawSkills.join(", "));
@@ -52,12 +51,11 @@ function EditProject() {
                 setRequiredSkills("");
             }
 
-            // Robust check for members count field variations
             const count = project.membersRequired ?? project.memberRequired ?? 1;
             setMembersRequired(Number(count));
         } catch (err) {
             console.error("Failed to fetch project details:", err);
-            setMessage("Failed to load project");
+            setMessage("Failed to load project details.");
         }
     };
 
@@ -126,9 +124,9 @@ function EditProject() {
                 title,
                 desc,
                 requiredSkills: skillsArray,
-                skillsRequired: skillsArray, // Sent both for schema safety
+                skillsRequired: skillsArray,
                 membersRequired,
-                memberRequired: membersRequired, // Sent both for schema safety
+                memberRequired: membersRequired,
                 aiAnalysis: suggestions ? {
                     ...suggestions,
                     analyzedAt: new Date(),
@@ -152,79 +150,103 @@ function EditProject() {
     return (
         <Layout>
             <BackButton />
-            <div className="flex justify-center mt-8 mb-10 p-4">
-                <div className="w-full max-w-2xl bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-lg">
-                    <div className="flex flex-col md:flex-row items-center justify-between border-b border-slate-500 pb-6 mb-8 gap-4">
-                        <div className="flex flex-row items-center">
-                            <SquarePen className="w-7 h-7 md:w-8 md:h-8 text-sky-500 mr-2" />
-                            <h1 className="text-2xl md:text-3xl font-bold text-white">Edit Project</h1>
+
+            <div className="max-w-2xl mx-auto py-4 px-2">
+                {/* Form Container */}
+                <div className="bg-slate-900/60 backdrop-blur-md border border-sky-700 rounded-2xl p-6 md:p-8 shadow-2xl space-y-6">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sky-700/60 pb-5">
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
+                                <SquarePen className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Edit Project</h1>
+                                <p className="text-xs text-slate-400">Modify title, tech stack, and member requirements.</p>
+                            </div>
                         </div>
 
                         <button
                             type="button"
                             onClick={handleAnalyzeDraft}
                             disabled={analyzing}
-                            className="flex items-center gap-2 bg-purple-900/60 border border-purple-500/50 hover:bg-purple-800/80 text-purple-200 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer"
+                            className="flex items-center gap-1.5 bg-purple-900/60 hover:bg-purple-800/80 border border-purple-500/40 text-purple-200 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer self-start sm:self-center shadow-sm"
                         >
-                            <Sparkles className={`w-4 h-4 ${analyzing ? 'animate-spin text-purple-400' : ''}`} />
+                            <Sparkles className={`w-3.5 h-3.5 text-purple-400 ${analyzing ? 'animate-spin' : ''}`} />
                             <span>{analyzing ? 'Analyzing Draft...' : 'Analyze Draft with AI'}</span>
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                    {/* Form Controls */}
+                    <form onSubmit={handleSubmit} className="space-y-4 text-xs">
                         <div>
-                            <label className="block text-slate-300 font-semibold mb-2">Project Title</label>
+                            <label className="block font-semibold text-slate-300 mb-1.5">Project Title</label>
                             <input
                                 required
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Title"
-                                className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                                placeholder="Project Title"
+                                className="w-full bg-[#0B0F17] border border-sky-700/80 rounded-xl px-3.5 py-2.5 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
                             />
                         </div>
+
                         <div>
-                            <label className="block text-slate-300 font-semibold mb-2">Project Description</label>
+                            <label className="block font-semibold text-slate-300 mb-1.5">Project Description</label>
                             <textarea
                                 rows={4}
                                 value={desc}
                                 onChange={(e) => setDesc(e.target.value)}
-                                placeholder="Project Description"
-                                className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600 resize-none"
+                                placeholder="Describe project updates, features, or roadmap..."
+                                className="w-full bg-[#0B0F17] border border-sky-700/80 rounded-xl px-3.5 py-2.5 text-slate-200 placeholder:text-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/80"
                             />
                         </div>
+
                         <div>
-                            <label className="block text-slate-300 font-semibold mb-2">Required Skills<span className="text-slate-400 text-sm font-medium pl-3">(Separate using commas.)</span></label>
+                            <label className="block font-semibold text-slate-300 mb-1.5">
+                                Required Skills <span className="text-slate-500 font-normal">(Comma separated)</span>
+                            </label>
                             <input
                                 value={requiredSkills}
                                 onChange={(e) => setRequiredSkills(e.target.value)}
                                 placeholder="React, Node, MongoDB"
-                                className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                                className="w-full bg-[#0B0F17] border border-sky-700/80 rounded-xl px-3.5 py-2.5 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
                             />
                         </div>
+
                         <div>
-                            <label className="block text-slate-300 font-semibold mb-2">Number of Members Required</label>
+                            <label className="block font-semibold text-slate-300 mb-1.5">Number of Members Required</label>
                             <input
                                 type="number"
                                 min={1}
                                 value={membersRequired}
                                 onChange={(e) => setMembersRequired(Number(e.target.value))}
-                                className="w-full bg-slate-900 border border-sky-700 rounded-2xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                                className="w-full bg-[#0B0F17] border border-sky-700/80 rounded-xl px-3.5 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
                             />
                         </div>
-                        <button type="submit" className="w-fit self-center mt-4 bg-sky-700 hover:bg-sky-600 text-white font-semibold px-8 py-3 rounded-lg transition duration-200 hover:scale-105 cursor-pointer"> Update Project </button>
-                        {message && (<p className="text-center text-red-400 font-medium">{message}</p>)}
+
+                        {message && <p className="text-rose-400 font-medium text-xs pt-1">{message}</p>}
+
+                        <div className="pt-4 flex justify-end">
+                            <button
+                                type="submit"
+                                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-2.5 rounded-xl transition cursor-pointer text-xs shadow-sm"
+                            >
+                                <Save className="w-4 h-4" />
+                                <span>Save Changes</span>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
 
             {/* AI Review Suggestions Modal */}
             {showAnalysisModal && suggestions && (
-                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-[#131A29] border border-slate-700 w-full max-w-2xl rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#131A29] border border-slate-700/80 w-full max-w-2xl rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
                         <button
                             type="button"
                             onClick={() => setShowAnalysisModal(false)}
-                            className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer"
+                            className="absolute top-4 right-4 text-slate-400 hover:text-white transition cursor-pointer p-1 rounded-lg hover:bg-slate-800"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -236,23 +258,25 @@ function EditProject() {
                             Review student-friendly recommendations generated by Gemini.
                         </p>
 
-                        <div className="space-y-4 text-sm">
-                            <div className="bg-[#0B0F17] p-4 rounded-xl border border-slate-800">
-                                <p className="text-xs text-slate-500 font-semibold mb-1 uppercase">Suggested Title</p>
+                        <div className="space-y-4 text-xs">
+                            {/* Title Recommendation */}
+                            <div className="bg-[#0B0F17] p-3.5 rounded-xl border border-sky-700/50">
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1 block">Suggested Title</span>
                                 <div className="flex items-center justify-between gap-3">
-                                    <p className="text-slate-200 font-medium">{suggestions.suggestedTitle}</p>
+                                    <p className="text-slate-200 font-semibold">{suggestions.suggestedTitle}</p>
                                     <button
                                         type="button"
                                         onClick={() => setTitle(suggestions.suggestedTitle)}
-                                        className="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 cursor-pointer"
+                                        className="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 cursor-pointer shrink-0"
                                     >
                                         <span>Use Title</span> <ArrowRight className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="bg-[#0B0F17] p-4 rounded-xl border border-slate-800">
-                                <p className="text-xs text-slate-500 font-semibold mb-1 uppercase">Suggested Description</p>
+                            {/* Description Recommendation */}
+                            <div className="bg-[#0B0F17] p-3.5 rounded-xl border border-sky-700/50">
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1 block">Suggested Description</span>
                                 <p className="text-slate-300 text-xs leading-relaxed mb-3">{suggestions.suggestedDesc}</p>
                                 <button
                                     type="button"
@@ -263,12 +287,13 @@ function EditProject() {
                                 </button>
                             </div>
 
+                            {/* Skills & Roles Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-[#0B0F17] p-4 rounded-xl border border-slate-800">
-                                    <p className="text-xs text-slate-500 font-semibold mb-2 uppercase">Recommended Skills</p>
-                                    <div className="flex flex-wrap gap-1.5 mb-2">
+                                <div className="bg-[#0B0F17] p-3.5 rounded-xl border border-sky-700/50">
+                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 block">Recommended Skills</span>
+                                    <div className="flex flex-wrap gap-1.5 mb-3">
                                         {suggestions.suggestedSkills.map((s, idx) => (
-                                            <span key={idx} className="bg-sky-950 text-sky-300 px-2.5 py-1 rounded-lg text-xs font-medium">
+                                            <span key={idx} className="bg-slate-800 border border-slate-700/60 text-sky-300 px-2.5 py-1 rounded-md text-xs font-medium">
                                                 {s}
                                             </span>
                                         ))}
@@ -276,17 +301,17 @@ function EditProject() {
                                     <button
                                         type="button"
                                         onClick={() => setRequiredSkills(suggestions.suggestedSkills.join(", "))}
-                                        className="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 cursor-pointer mt-1"
+                                        className="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 cursor-pointer"
                                     >
                                         <span>Use Skills</span> <ArrowRight className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
 
-                                <div className="bg-[#0B0F17] p-4 rounded-xl border border-slate-800">
-                                    <p className="text-xs text-slate-500 font-semibold mb-2 uppercase">Suggested Team Roles</p>
+                                <div className="bg-[#0B0F17] p-3.5 rounded-xl border border-sky-700/50">
+                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 block">Suggested Team Roles</span>
                                     <div className="flex flex-wrap gap-1.5">
                                         {suggestions.suggestedRoles.map((r, idx) => (
-                                            <span key={idx} className="bg-purple-950 text-purple-300 px-2.5 py-1 rounded-lg text-xs font-medium">
+                                            <span key={idx} className="bg-purple-950/40 border border-purple-500/30 text-purple-300 px-2.5 py-1 rounded-md text-xs font-medium">
                                                 {r}
                                             </span>
                                         ))}
@@ -295,18 +320,19 @@ function EditProject() {
                             </div>
                         </div>
 
+                        {/* Modal Action Buttons */}
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-800">
                             <button
                                 type="button"
                                 onClick={() => setShowAnalysisModal(false)}
-                                className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800 cursor-pointer"
+                                className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800 transition cursor-pointer"
                             >
                                 Dismiss
                             </button>
                             <button
                                 type="button"
                                 onClick={applyAllSuggestions}
-                                className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs cursor-pointer"
+                                className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold px-5 py-2 rounded-xl text-xs transition cursor-pointer shadow-sm"
                             >
                                 <Check className="w-4 h-4" />
                                 <span>Apply All Suggestions</span>

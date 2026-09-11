@@ -4,7 +4,7 @@ import type { application } from "../types/application";
 import Layout from "../Components/Layout";
 import Error from "../Components/Error";
 import Loader from "../Components/Loader";
-import { Search, ChevronDown, BicepsFlexed, TrendingDown, Sparkles, Users, MessageSquare } from "lucide-react";
+import { Search, ChevronDown, BicepsFlexed, TrendingDown, Sparkles, Users, MessageSquare, ArrowRight, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AIAnalysisLoader from "../Components/AiAnalysisLoader";
 import toast from "react-hot-toast";
@@ -40,24 +40,24 @@ function MyApplications() {
     };
 
     const deleteApplication = async (id: string) => {
-        const confirmDelete = window.confirm("Are you sure you want to delete this Application?");
+        const confirmDelete = window.confirm("Are you sure you want to withdraw this Application?");
         if (!confirmDelete) return;
         const toastId = toast.custom(
-            <CustomToast type="info" title="Withdrawing Application" message="Withdrawal in process..." />,
+            () => <CustomToast type="info" title="Withdrawing Application" message="Withdrawal in process..." />,
             { duration: Infinity }
         );
         try {
             await api.delete(`/applications/${id}`);
-            setApplications((prev) => prev.filter((application) => application.id !== id));
+            setApplications((prev) => prev.filter((app) => app.id !== id));
             toast.remove(toastId);
             toast.custom(
-                <CustomToast type="success" title="Application Withdrawn" message="Your application has been withdrawn successfully." />,
+                () => <CustomToast type="success" title="Application Withdrawn" message="Your application has been withdrawn successfully." />,
                 { duration: 1200 }
             );
         } catch (err) {
             toast.remove(toastId);
             toast.custom(
-                <CustomToast type="error" title="Withdrawal Failed" message="Failed to withdraw your application. Please try again!" />,
+                () => <CustomToast type="error" title="Withdrawal Failed" message="Failed to withdraw your application. Please try again!" />,
                 { duration: 1200 }
             );
         } finally {
@@ -70,7 +70,7 @@ function MyApplications() {
         setAnalyzingId(applicationId);
         setShowLoader(true);
         setLoaderState("loading");
-        setLoaderMessage("Analyzing your profile...");
+        setLoaderMessage("Analyzing your profile match...");
 
         try {
             const response = await api.patch(`/applications/${applicationId}/analyze`);
@@ -108,144 +108,196 @@ function MyApplications() {
                     onRetry={() => handleAnalyze(currentApplicationId)}
                 />
             )}
-            <h1 className="text-4xl md:text-5xl font-medium text-white text-center">My Applications</h1>
-            <p className="mt-4 text-xl text-slate-400 text-center">Track all your submitted applications</p>
-            <p className="text-white text-center p-4">{applications.length} application{applications.length !== 1 && "s"}</p>
-            
-            <div className="flex justify-center mt-8">
-                <div className="relative w-full max-w-xl">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-600 w-5 h-5" />
-                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search Application..." className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600" />
-                </div>
-            </div>
 
-            <div className="flex items-center justify-center mt-4">
-                <label className="text-white font-medium whitespace-nowrap pr-2">Status :</label>
-                <div className="relative">
-                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="appearance-none w-60 px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-sky-600">
-                        <option value="all">All</option>
-                        <option value="pending">Pending</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                </div>
-            </div>
+            <div className="max-w-4xl mx-auto px-4 py-4">
+                {/* Header */}
+                <h1 className="text-3xl md:text-4xl font-extrabold text-white text-center tracking-tight">
+                    My Applications
+                </h1>
+                <p className="mt-2 text-sm md:text-base text-slate-400 text-center">
+                    Track and review all your submitted project applications.
+                </p>
 
-            <div className="w-fit mx-auto mt-4 flex items-center gap-2">
-                <Users className="text-sky-500" />
-                <p className="text-white text-center pr-4">{displayedApplications.length} application{displayedApplications.length !== 1 && "s"} found</p>
-            </div>
-
-            {(displayedApplications.length === 0 && statusFilter === "all") && (
-                <div className="flex justify-center">
-                    <button className="bg-sky-700 font-medium mt-4 text-white px-6 py-3 rounded-lg hover:bg-sky-600 transition-colors" onClick={() => navigate('/projects')}>Browse Projects</button>
-                </div>
-            )}
-
-            {displayedApplications.map((application) => (
-                <div key={application.id} className="max-w-2xl lg:max-w-3xl mx-auto border-4 border-slate-700 mt-10 p-10 rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] transition-all duration-300">
-                    <h2 className="text-2xl md:text-4xl font-bold text-white">{application.project.title}</h2>
-
-                    <div className="mt-2 md:mt-6">
-                        <div className="flex gap-3">
-                            <p className="text-slate-400 font-medium pr-2 mt-1 py-1">AI Match Score</p>
-                            <span className={`inline-block px-5 py-2 rounded-full font-semibold ${
-                                (application.aiMatchScore ?? 0) >= 80
-                                    ? "bg-green-500/20 text-green-400"
-                                    : (application.aiMatchScore ?? 0)
-                                    ? "bg-yellow-500/20 text-yellow-400"
-                                    : "bg-red-500/20 text-red-400"
-                            }`}>
-                                {application.aiMatchScore ?? 0}%
-                            </span>
-                        </div>
-                    </div>
-                    {/* Inside application status card */}
-                    <div className="mt-6 flex items-center gap-4 ">
-                        <span className="text-sm text-slate-400 font-semibold uppercase">Your Matched Role:</span>
-                        <span className="text-sm font-bold text-sky-400 bg-sky-950/80 px-2.5 py-1 rounded-lg border border-sky-800/50">
-                        {application.assignedRole || "Team Contributor"}
-                        </span>
+                {/* Filters Row */}
+                <div className="flex flex-col md:flex-row items-center justify-center gap-3 mt-6">
+                    {/* Search Bar */}
+                    <div className="relative w-full max-w-md">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-500 w-4 h-4" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search applications..."
+                            className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-sky-700 bg-slate-900/80 text-white text-xs md:text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/80 shadow-md"
+                        />
                     </div>
 
-                    {/* Submitted Cover Note Section */}
-                    {application.message && (
-                        <div className="mt-4 p-4 rounded-xl bg-slate-800/60 border border-slate-700/60">
-                            <div className="flex items-center gap-2 text-sky-400 text-sm font-semibold mb-1">
-                                <MessageSquare className="w-4 h-4" /> Your Cover Note / Message
-                            </div>
-                            <p className="text-slate-300 text-sm italic leading-relaxed">
-                                "{application.message}"
-                            </p>
-                        </div>
-                    )}
+                    {/* Status Dropdown */}
+                    <div className="relative w-full md:w-48">
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value as any)}
+                            className="appearance-none w-full px-4 py-2.5 rounded-xl border border-sky-700 bg-slate-900/80 text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/80 cursor-pointer"
+                        >
+                            <option value="all">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    </div>
+                </div>
 
-                    <div className="h-full border-b border-slate-600 pb-8 md:pb-12">
-                        <div className="grid md:grid-cols-2 gap-2 md:gap-6 mt-2 md:mt-6">
-                            <div className="mt-2 md:mt-4">
-                                <div className="flex flex-row mb-1">
-                                    <BicepsFlexed className="w-7 h-7 mt-2 text-emerald-500" />
-                                    <h3 className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Strengths</h3>
+                {/* Counter Tag */}
+                <div className="w-fit mx-auto mt-4 flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                    <Users className="w-4 h-4 text-sky-500" />
+                    <span>{displayedApplications.length} application{displayedApplications.length !== 1 && "s"} found</span>
+                </div>
+
+                {/* Empty State */}
+                {displayedApplications.length === 0 && (
+                    <div className="text-center py-16">
+                        <h2 className="text-slate-400 text-lg font-semibold">No applications found</h2>
+                        <p className="text-slate-500 text-xs mt-1 mb-4">You haven't applied to any projects matching this criteria.</p>
+                        {statusFilter === "all" && (
+                            <button
+                                onClick={() => navigate('/projects')}
+                                className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition cursor-pointer shadow-sm"
+                            >
+                                Browse Projects
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Application Cards List */}
+                <div className="space-y-6 mt-6">
+                    {displayedApplications.map((app) => (
+                        <div
+                            key={app.id}
+                            className="bg-slate-900/60 backdrop-blur-md border border-sky-700 rounded-2xl p-6 shadow-xl hover:border-sky-500 hover:bg-slate-800 transition-all duration-300"
+                        >
+                            {/* Card Header */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-700/60 pb-4">
+                                <div>
+                                    <h2 className="text-xl font-bold text-white hover:text-sky-400 transition cursor-pointer" onClick={() => navigate(`/projects/${app.project.id || (app.project as any)._id}`)}>
+                                        {app.project.title}
+                                    </h2>
+                                    {app.assignedRole && (
+                                        <div className="flex items-center gap-1.5 text-purple-300 text-xs font-medium mt-1">
+                                            <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                                            <span>Matched Role: <strong className="text-white">{app.assignedRole}</strong></span>
+                                        </div>
+                                    )}
                                 </div>
-                                {application.strengths.length === 0 ? (
-                                    <p className="text-slate-400 italic">AI analysis pending.</p>
-                                ) : (
-                                    <div className="border-2 border-emerald-600 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                                        <ul className="list-disc list-inside space-y-2 text-slate-300">
-                                            {application.strengths.map((strength, index) => (
-                                                <li key={`${strength}-${index}`}>{strength}</li>
+
+                                <div className="flex items-center gap-2 self-start sm:self-center">
+                                    {/* AI Score Badge */}
+                                    {app.aiMatchScore !== null && (
+                                        <div className={`px-3 py-1 rounded-xl text-xs font-bold ${
+                                            app.aiMatchScore >= 70
+                                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                                : app.aiMatchScore >= 50
+                                                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                                : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                        }`}>
+                                            {app.aiMatchScore}% Match
+                                        </div>
+                                    )}
+
+                                    {/* Status Badge */}
+                                    <span className={`px-3 py-1 rounded-xl text-xs font-semibold ${
+                                        app.status === "accepted"
+                                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                            : app.status === "pending"
+                                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                            : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                    }`}>
+                                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Cover Note Section */}
+                            {app.message && (
+                                <div className="mt-4 p-3.5 rounded-xl bg-slate-950/40 border border-sky-700/50">
+                                    <span className="text-sky-400 text-[11px] font-semibold flex items-center gap-1.5 mb-1">
+                                        <MessageSquare className="w-3.5 h-3.5" /> Your Cover Note
+                                    </span>
+                                    <p className="text-slate-300 text-xs italic leading-relaxed">
+                                        "{app.message}"
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Strengths & Weaknesses Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <div className="bg-emerald-950/20 border border-emerald-500/20 p-3.5 rounded-xl">
+                                    <span className="text-emerald-400 font-semibold text-xs flex items-center gap-1.5 mb-2">
+                                        <BicepsFlexed className="w-4 h-4" /> Strengths
+                                    </span>
+                                    {app.strengths.length === 0 ? (
+                                        <p className="text-slate-500 text-xs italic">AI evaluation pending.</p>
+                                    ) : (
+                                        <ul className="list-disc list-inside space-y-1 text-slate-300 text-xs">
+                                            {app.strengths.map((s, idx) => (
+                                                <li key={idx}>{s}</li>
                                             ))}
                                         </ul>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mt-2 md:mt-4">
-                                <div className="flex flex-row mb-1">
-                                    <TrendingDown className="w-7 h-7 mt-2 text-amber-400" />
-                                    <p className="text-slate-400 font-semibold text-xl pr-4 pl-2 py-2">Areas to Improve</p>
+                                    )}
                                 </div>
-                                {application.weaknesses.length === 0 ? (
-                                    <p className="text-slate-400 italic">AI analysis pending.</p>
-                                ) : (
-                                    <div className="border-2 border-amber-400 px-5 py-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                                        <ul className="list-disc list-inside space-y-2 text-slate-300">
-                                            {application.weaknesses.map((weakness, index) => (
-                                                <li key={`${weakness}-${index}`}>{weakness}</li>
+
+                                <div className="bg-amber-950/20 border border-amber-500/20 p-3.5 rounded-xl">
+                                    <span className="text-amber-400 font-semibold text-xs flex items-center gap-1.5 mb-2">
+                                        <TrendingDown className="w-4 h-4" /> Areas to Improve
+                                    </span>
+                                    {app.weaknesses.length === 0 ? (
+                                        <p className="text-slate-500 text-xs italic">AI evaluation pending.</p>
+                                    ) : (
+                                        <ul className="list-disc list-inside space-y-1 text-slate-300 text-xs">
+                                            {app.weaknesses.map((w, idx) => (
+                                                <li key={idx}>{w}</li>
                                             ))}
                                         </ul>
-                                    </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Action Footer */}
+                            <div className="mt-5 pt-4 border-t border-sky-700/60 flex items-center justify-between">
+                                {/* Trigger AI Evaluation Button if missing */}
+                                {app.aiMatchScore === null && app.status === "pending" ? (
+                                    <button
+                                        disabled={analyzingId === app.id}
+                                        onClick={() => handleAnalyze(app.id)}
+                                        className="flex items-center gap-1.5 bg-purple-900/60 hover:bg-purple-800/80 border border-purple-500/40 text-purple-200 text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer"
+                                    >
+                                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                                        <span>{analyzingId === app.id ? "Analyzing..." : "Analyze with AI"}</span>
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => navigate(`/projects/${app.project.id || (app.project as any)._id}`)}
+                                        className="text-sky-400 hover:text-sky-300 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                                    >
+                                        <span>View Project</span>
+                                        <ArrowRight className="w-3 h-3" />
+                                    </button>
                                 )}
+
+                                {/* Withdraw Application Button */}
+                                <button
+                                    onClick={() => deleteApplication(app.id)}
+                                    className="bg-slate-950 hover:bg-rose-950/60 border border-sky-700 hover:border-rose-700/60 text-slate-400 hover:text-rose-300 text-xs font-semibold px-4 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Withdraw</span>
+                                </button>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="mt-6 flex flex-col md:flex-row justify-between items-center mb-4">
-                        <div className="flex flex-row items-center">
-                            <p className="text-slate-400 font-medium py-2 pr-2">Application Status  </p>
-                            <span className={`inline-block mt-2 px-5 py-2 rounded-full font-semibold ${
-                                application.status === "accepted"
-                                    ? "bg-green-500/20 text-green-400"
-                                    : application.status === "pending"
-                                    ? "bg-amber-400/20 text-yellow-400"
-                                    : "bg-red-500/20 text-red-400"
-                            }`}>
-                                {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                            </span>
-                        </div>
-
-                        <button onClick={() => deleteApplication(application.id)} className="mt-6 md:mt-0 px-8 py-2 rounded-lg border border-red-500/40 font-semibold text-red-400 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all duration-200">Withdraw Application</button>
-                    </div>
-
-                    {(application.aiMatchScore === null && application.status === "pending") && (
-                        <div className="flex flex-row gap-2 mt-10 justify-center md:justify-start">
-                            <Sparkles className="w-8 h-9 text-purple-700 hover:text-purple-600 mt-1" />
-                            <button disabled={analyzingId === application.id} className="md:mt-0 px-8 py-3 font-semibold italic rounded-lg bg-purple-800 text-white hover:bg-purple-700 transition-all duration-200" onClick={() => handleAnalyze(application.id)}>{analyzingId === application.id ? "Analyzing..." : "Analyze using AI"}</button>
-                        </div>
-                    )}
+                    ))}
                 </div>
-            ))}
+            </div>
         </Layout>
     );
 }

@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import api from "../services/api";
 import type { project } from "../types/project";
 import Layout from "../Components/Layout";
-import { ArrowLeft, Users, FileText, Brain, Palette, Send, X } from "lucide-react";
+import { ArrowLeft, Users, FileText, Brain, Palette, Send, X, MessageSquare, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Error from "../Components/Error";
 import Loader from "../Components/Loader";
 import toast from "react-hot-toast";
@@ -13,7 +13,8 @@ import { useAuth } from "../Context/AuthContext";
 import socket from "../socket";
 
 type Application = {
-    project: string;
+    id: string;
+    project: any;
     status: string;
 };
 
@@ -32,7 +33,11 @@ function ProjectDetails() {
     const [applyMessage, setApplyMessage] = useState("");
 
     const navigate = useNavigate();
-    const isOwner = project?.creator?.id === user?.id;
+
+    // Check project ownership safely handling populated object or string ID
+    const creatorId = project?.creator?.id || (project?.creator as any)?._id || project?.creator;
+    const currentUserId = user?.id || (user as any)?._id;
+    const isOwner = Boolean(creatorId && currentUserId && String(creatorId) === String(currentUserId));
 
     useEffect(() => {
         if (id) {
@@ -42,7 +47,7 @@ function ProjectDetails() {
 
     useEffect(() => {
         getProject();
-    }, []);
+    }, [id]);
 
     useEffect(() => {
         const fetchApplications = async () => {
@@ -59,14 +64,21 @@ function ProjectDetails() {
         }
     }, [user]);
 
-    const isAccepted = applications.some(
-        app => app.project === project?.id && app.status === "accepted"
-    );
+    // Match current user's application for this project safely
+    const myApplication = applications.find((app) => {
+        const appProjectId = typeof app.project === "object" ? (app.project.id || app.project._id) : app.project;
+        return String(appProjectId) === String(id);
+    });
+
+    const isAccepted = myApplication?.status === "accepted";
+    const isPending = myApplication?.status === "pending";
+    const isRejected = myApplication?.status === "rejected";
 
     const getProject = async () => {
         try {
             const res = await api.get(`/projects/${id}`);
-            setProject(res.data);
+            const projectData = res.data.project || res.data;
+            setProject(projectData);
         } catch (err) {
             setError("Project Not Found");
         } finally {
@@ -80,7 +92,7 @@ function ProjectDetails() {
         try {
             await api.post(`/applications/${id}/apply`, {
                 projectId: id,
-                message: applyMessage, // Sent optionally to backend & Gemini
+                message: applyMessage,
             });
 
             toast.custom(
@@ -88,7 +100,7 @@ function ProjectDetails() {
                     <CustomToast
                         type="success"
                         title="Application Submitted"
-                        message="Your Application has been sent successfully."
+                        message="Your application has been sent successfully."
                     />
                 ),
                 { duration: 1500 }
@@ -96,8 +108,8 @@ function ProjectDetails() {
 
             setShowApplyModal(false);
             setApplyMessage("");
-            
-            // Refresh applications list
+
+            // Refresh user applications list
             const response = await api.get("/applications/my");
             setApplications(response.data);
         } catch (err: any) {
@@ -106,7 +118,7 @@ function ProjectDetails() {
                     <CustomToast
                         type="error"
                         title="Application Failed"
-                        message={err.response?.data?.error || err.response?.data?.message || "Failed to submit Application"}
+                        message={err.response?.data?.error || err.response?.data?.message || "Failed to submit application"}
                     />
                 ),
                 { duration: 2000 }
@@ -121,10 +133,10 @@ function ProjectDetails() {
 
     return (
         <Layout>
-            <div className="flex items-center">
-                <ArrowLeft className="text-slate-400 h-8 w-8 font-bold hover:text-slate-300" />
+            <div className="flex items-center mb-6">
+                <ArrowLeft className="text-slate-400 h-8 w-8 font-bold hover:text-slate-300 cursor-pointer" onClick={() => navigate(`/projects`)} />
                 <button
-                    className="pl-2 font-semibold text-slate-400 text-2xl hover:text-slate-300"
+                    className="pl-2 font-semibold text-slate-400 text-2xl hover:text-slate-300 cursor-pointer"
                     onClick={() => navigate(`/projects`)}
                 >
                     Back to Projects
@@ -132,27 +144,27 @@ function ProjectDetails() {
             </div>
 
             {project && (
-                <div className="max-w-2xl mx-auto border-4 border-slate-700 mt-10 p-10 text-left rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)]">
-                    <div className="flex-col">
+                <div className="max-w-2xl mx-auto border-4 border-slate-700 mt-6 p-8 md:p-10 text-left rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] bg-slate-900/50">
+                    <div className="flex flex-col gap-2">
                         <h2 className="text-2xl md:text-4xl font-bold text-white">{project.title}</h2>
                         {isOwner && (
-                            <div className="inline-flex bg-green-500/20 text-green-400 mt-3 px-4 py-2 rounded-lg font-semibold">
-                                ✓ Your Project
+                            <div className="inline-flex w-fit bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-3.5 py-1.5 rounded-lg text-xs font-bold">
+                                ✓ Your Project (Owner)
                             </div>
                         )}
                     </div>
 
-                    <section className="text-slate-300 mt-3 line-clamp-3 py-6 flex flex-col gap-6">
-                        <div className="max-w-3xl leading-8">
-                            <div className="flex flex-row">
-                                <FileText className="w-7 h-7 mt-2 text-sky-500" />
-                                <p className="text-slate-400 font-semibold text-xl pr-4 pl-4 py-2">DESCRIPTION</p>
+                    <section className="text-slate-300 mt-4 py-4 flex flex-col gap-6">
+                        <div className="max-w-3xl leading-relaxed">
+                            <div className="flex flex-row items-center mb-2">
+                                <FileText className="w-6 h-6 text-sky-500 mr-2" />
+                                <p className="text-slate-400 font-bold text-sm tracking-wider uppercase">DESCRIPTION</p>
                             </div>
-                            <p className={expanded ? "" : "line-clamp-3"}>{project.desc}</p>
+                            <p className={`text-slate-300 ${expanded ? "" : "line-clamp-3"}`}>{project.desc}</p>
                             {project.desc.length > 180 && (
                                 <button
                                     onClick={() => setExpanded(!expanded)}
-                                    className="mt-2 text-sky-500 hover:text-sky-400 text-sm font-medium"
+                                    className="mt-2 text-sky-400 hover:text-sky-300 text-xs font-semibold cursor-pointer"
                                 >
                                     {expanded ? "Read Less" : "Read More"}
                                 </button>
@@ -160,24 +172,24 @@ function ProjectDetails() {
                         </div>
 
                         <div>
-                            <div className="flex flex-row">
-                                <Palette className="w-7 h-7 mt-2 text-sky-500" />
-                                <p className="text-slate-400 font-semibold text-xl pr-4 pl-4 py-2">CREATED BY</p>
+                            <div className="flex flex-row items-center mb-1">
+                                <Palette className="w-6 h-6 text-sky-500 mr-2" />
+                                <p className="text-slate-400 font-bold text-sm tracking-wider uppercase">CREATED BY</p>
                             </div>
-                            <p>{project.creator?.name.toString()}</p>
+                            <p className="text-slate-200 font-semibold">{project.creator?.name || "Project Creator"}</p>
                         </div>
                     </section>
 
-                    <section className="flex flex-col">
-                        <div className="flex flex-row">
-                            <Brain className="w-7 h-7 mt-2 text-sky-500" />
-                            <p className="text-xl text-slate-400 py-2 pl-4 font-semibold">Required Skills</p>
+                    <section className="flex flex-col mt-2">
+                        <div className="flex flex-row items-center mb-2">
+                            <Brain className="w-6 h-6 text-sky-500 mr-2" />
+                            <p className="text-slate-400 font-bold text-sm tracking-wider uppercase">Required Skills</p>
                         </div>
-                        <div className="flex flex-wrap gap-3 mt-1">
-                            {project.requiredSkills.map((skill, index) => (
+                        <div className="flex flex-wrap gap-2">
+                            {(project.requiredSkills || []).map((skill, index) => (
                                 <span
                                     key={`${skill}-${index}`}
-                                    className="bg-sky-100 text-sky-900 px-3.5 md:px-5 py-2 rounded-full font-semibold transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:cursor-pointer"
+                                    className="bg-sky-950 text-sky-300 border border-sky-800/60 px-3.5 py-1.5 rounded-xl text-xs font-semibold"
                                 >
                                     {skill}
                                 </span>
@@ -185,46 +197,89 @@ function ProjectDetails() {
                         </div>
                     </section>
 
-                    <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
-                        <div className="mt-6 flex items-center">
-                            <Users className="text-sky-500 w-6 h-6 md:w-7 md:h-7" />
-                            <span className="pl-1 md:pl-2 text-slate-400 font-medium">
-                                {project.membersRequired} Members
-                            </span>
+                    {/* Footer Actions Section */}
+                    <div className="mt-8 pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div className="flex items-center text-slate-400 font-medium text-sm">
+                            <Users className="text-sky-500 w-5 h-5 mr-2" />
+                            <span>{project.membersRequired} Members Required</span>
                         </div>
 
-                        {isOwner ? (
-                            <button
-                                className="bg-sky-700 text-white font-medium px-4 md:px-8 py-2 md:py-3 mt-6 rounded-lg hover:bg-sky-600 transition-colors"
-                                onClick={() => navigate(`/applications/${project.id}/applicants`)}
-                            >
-                                View Applicants
-                            </button>
-                        ) : (
-                            <button
-                                className="bg-sky-700 text-white font-medium px-8 py-2 mt-6 rounded-lg hover:bg-sky-600 transition-colors"
-                                onClick={() => setShowApplyModal(true)}
-                            >
-                                Apply
-                            </button>
-                        )}
+                        <div className="flex flex-wrap items-center gap-3">
+                            {/* OWNER VIEW */}
+                            {isOwner && (
+                                <>
+                                    <button
+                                        className="bg-sky-700 hover:bg-sky-600 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition cursor-pointer"
+                                        onClick={() => navigate(`/applications/${id}/applicants`)}
+                                    >
+                                        View Applicants
+                                    </button>
 
-                        {(isOwner || isAccepted) && (
-                            <button className="text-white" onClick={() => navigate(`/chat/${id}`)}>
-                                Open Chat
-                            </button>
-                        )}
+                                    <button
+                                        className="bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                                        onClick={() => navigate(`/chat/${id}`)}
+                                    >
+                                        <MessageSquare className="w-4 h-4" />
+                                        <span>Open Chatroom</span>
+                                    </button>
+                                </>
+                            )}
+
+                            {/* NON-OWNER: ACCEPTED MEMBER VIEW */}
+                            {!isOwner && isAccepted && (
+                                <>
+                                    <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        <span>Accepted Member</span>
+                                    </div>
+
+                                    <button
+                                        className="bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                                        onClick={() => navigate(`/chat/${id}`)}
+                                    >
+                                        <MessageSquare className="w-4 h-4" />
+                                        <span>Open Chatroom</span>
+                                    </button>
+                                </>
+                            )}
+
+                            {/* NON-OWNER: PENDING APPLICANT VIEW */}
+                            {!isOwner && isPending && (
+                                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5">
+                                    <Clock className="w-4 h-4" />
+                                    <span>Already Applied (Pending)</span>
+                                </div>
+                            )}
+
+                            {/* NON-OWNER: REJECTED APPLICANT VIEW */}
+                            {!isOwner && isRejected && (
+                                <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5">
+                                    <XCircle className="w-4 h-4" />
+                                    <span>Application Declined</span>
+                                </div>
+                            )}
+
+                            {/* NON-OWNER: NOT YET APPLIED */}
+                            {!isOwner && !myApplication && (
+                                <button
+                                    className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition cursor-pointer"
+                                    onClick={() => setShowApplyModal(true)}
+                                >
+                                    Apply
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* Optional Cover Note Modal */}
+            {/* Apply Cover Note Modal */}
             {showApplyModal && (
                 <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-[#131A29] border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
                         <button
                             onClick={() => setShowApplyModal(false)}
-                            className="absolute top-4 right-4 text-slate-400 hover:text-white transition"
+                            className="absolute top-4 right-4 text-slate-400 hover:text-white transition cursor-pointer"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -252,14 +307,14 @@ function ProjectDetails() {
                                 <button
                                     type="button"
                                     onClick={() => setShowApplyModal(false)}
-                                    className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800 transition"
+                                    className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800 transition cursor-pointer"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isApplying}
-                                    className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold px-5 py-2 rounded-xl text-xs transition disabled:opacity-50"
+                                    className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold px-5 py-2 rounded-xl text-xs transition disabled:opacity-50 cursor-pointer"
                                 >
                                     <Send className="w-3.5 h-3.5" />
                                     <span>{isApplying ? "Submitting..." : "Send Application"}</span>
