@@ -63,13 +63,17 @@ async function exchangeCodeForProfile(code) {
         email = primary?.email || null;
     }
 
-    return { accessToken, profile, email };
+    return { accessToken, profile, email: email ? email.toLowerCase().trim() : null };
 }
 
 function issueTokenAndRedirect(res, user) {
     const tokenUser = { id: user._id, name: user.name };
     const token = jwt.sign(tokenUser, process.env.JWT_SECRET, { expiresIn: "7d" });
-    const userPayload = encodeURIComponent(JSON.stringify(user.toJSON()));
+    
+    // Convert to JSON explicitly using toJSON if present to drop secret keys
+    const rawUserData = user.toJSON ? user.toJSON() : user;
+    const userPayload = encodeURIComponent(JSON.stringify(rawUserData));
+    
     res.redirect(`${FRONTEND_URL}/oauth-success?token=${token}&user=${userPayload}`);
 }
 
@@ -88,6 +92,8 @@ export const githubCallback = async (req, res) => {
             return res.redirect(errTarget);
         }
 
+        const cleanGithubId = String(profile.id);
+
         // ---- LINK MODE ----
         if (state) {
             let decoded;
@@ -101,7 +107,7 @@ export const githubCallback = async (req, res) => {
             }
 
             // Safety check: is this GitHub account already linked to a DIFFERENT user?
-            const existingLink = await User.findOne({ githubId: String(profile.id) });
+            const existingLink = await User.findOne({ githubId: cleanGithubId });
             if (existingLink && String(existingLink._id) !== String(decoded.userId)) {
                 return res.redirect(`${FRONTEND_URL}/profile?linkError=already_linked_elsewhere`);
             }
@@ -111,7 +117,7 @@ export const githubCallback = async (req, res) => {
                 return res.redirect(`${FRONTEND_URL}/profile?linkError=user_not_found`);
             }
 
-            currentUser.githubId = String(profile.id);
+            currentUser.githubId = cleanGithubId;
             currentUser.githubUsername = profile.login;
             currentUser.githubAccessToken = accessToken;
             await currentUser.save();
@@ -120,7 +126,7 @@ export const githubCallback = async (req, res) => {
         }
 
         // ---- LOGIN MODE ----
-        let user = await User.findOne({ githubId: String(profile.id) });
+        let user = await User.findOne({ githubId: cleanGithubId });
 
         if (user) {
             user.githubAccessToken = accessToken;
@@ -131,7 +137,7 @@ export const githubCallback = async (req, res) => {
         user = await User.findOne({ email });
 
         if (user) {
-            user.githubId = String(profile.id);
+            user.githubId = cleanGithubId;
             user.githubUsername = profile.login;
             user.githubAccessToken = accessToken;
             if (!user.isEmailVerified) user.isEmailVerified = true;
@@ -139,14 +145,20 @@ export const githubCallback = async (req, res) => {
             return issueTokenAndRedirect(res, user);
         }
 
-        user = await User.create({
+        // FIX: Instantiate user object first so githubId is registered before password validation runs
+        user = new User({
+            githubId: cleanGithubId,
             name: profile.name || profile.login,
             email: email,
-            githubId: String(profile.id),
             githubUsername: profile.login,
             githubAccessToken: accessToken,
             isEmailVerified: true,
+            bio: '',
+            skills: [],
+            interests: []
         });
+
+        await user.save();
 
         return issueTokenAndRedirect(res, user);
 

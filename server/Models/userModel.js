@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: function () {
+      // Check if either OAuth ID is present on the instance
       return !this.googleId && !this.githubId;
     },
   },
@@ -16,7 +17,11 @@ const userSchema = new mongoose.Schema({
   // --- New Profile Fields ---
   location: { type: String, default: "" },
   university: { type: String, default: "" },
-  jobProfile: { type: String, enum: ["Student", "Working Professional", "Freelancer", "Other", ""], default: "" },
+  jobProfile: { 
+    type: String, 
+    enum: ["Student", "Working Professional", "Freelancer", "Other", ""], 
+    default: "" 
+  },
   branch: { type: String, default: "" },
 
   isEmailVerified: { type: Boolean, default: false },
@@ -28,7 +33,9 @@ const userSchema = new mongoose.Schema({
   githubId: { type: String, default: null, unique: true, sparse: true },
   githubAccessToken: { type: String, default: null, select: false },
   githubUsername: { type: String, default: null },
-  googleId: { type: String, default: null, sparse: true },
+  
+  // 👈 FIX: Added unique: true alongside sparse: true
+  googleId: { type: String, default: null, unique: true, sparse: true },
 });
 
 userSchema.set("toJSON", {
