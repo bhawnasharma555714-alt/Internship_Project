@@ -100,7 +100,12 @@ export const googleCallback = async (req, res) => {
 
     return res.redirect(`${frontendUrl}/oauth-success?token=${token}&user=${userPayload}`);
   } catch (error) {
-    console.error('Google Auth Error Details:', error.response?.data || error.message || error);
-    return res.redirect(`${frontendUrl}/login?error=google_login_failed`);
+    const errorMessage = error.response?.data?.error_description 
+      || error.response?.data?.error 
+      || error.message 
+      || 'unknown_error';
+      
+    console.error('FULL GOOGLE AUTH ERROR:', error);
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorMessage)}`);
   }
 };

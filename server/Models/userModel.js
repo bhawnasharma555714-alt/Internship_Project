@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: function () {
       // Check if either OAuth ID is present on the instance
-      return !this.googleId && !this.githubId;
+      if (this.googleId || this.githubId) return false;
+      return true;
     },
   },
   bio: { type: String, default: "" },
