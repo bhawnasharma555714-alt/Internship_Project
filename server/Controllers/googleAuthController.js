@@ -100,12 +100,15 @@ export const googleCallback = async (req, res) => {
 
     return res.redirect(`${frontendUrl}/oauth-success?token=${token}&user=${userPayload}`);
   } catch (error) {
-    const errorMessage = error.response?.data?.error_description 
-      || error.response?.data?.error 
-      || error.message 
-      || 'unknown_error';
-      
-    console.error('FULL GOOGLE AUTH ERROR:', error);
-    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorMessage)}`);
+    // Extracts exact error message returned by Google API or Mongoose Validation
+    const detailedError = 
+      error.response?.data?.error_description || 
+      error.response?.data?.error || 
+      error.message;
+
+    console.error('GOOGLE OAUTH DETAILED ERROR:', error.response?.data || error);
+
+    // Redirects to frontend login page displaying the exact error message in the URL
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(detailedError)}`);
   }
 };
