@@ -10,7 +10,6 @@ export default function OAuthSuccess() {
   const hasProcessed = useRef(false);
 
   useEffect(() => {
-    // Prevent running multiple times in an infinite loop
     if (hasProcessed.current) return;
 
     const token = searchParams.get("token");
@@ -19,19 +18,17 @@ export default function OAuthSuccess() {
     if (token && userString) {
       hasProcessed.current = true;
       try {
-        const parsedUser = JSON.parse(decodeURIComponent(userString));
+        const decodedUser = JSON.parse(decodeURIComponent(userString));
 
-        // 1. Store token in localStorage
         localStorage.setItem("token", token);
+        updateUser(decodedUser);
 
-        // 2. Update user state in AuthContext
-        updateUser(parsedUser);
-
-        // 3. Redirect once to profile
         navigate("/profile", { replace: true });
       } catch (err) {
         console.error("Failed to parse OAuth payload:", err);
-        navigate("/login", { replace: true });
+        // Fallback: Store token and redirect to home if parsing user fails
+        localStorage.setItem("token", token);
+        navigate("/", { replace: true });
       }
     } else {
       hasProcessed.current = true;

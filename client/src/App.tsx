@@ -48,13 +48,14 @@ function App() {
         <Route path='/projects/:id' element={<ProjectDetails/>}/>
         <Route path="/applications/:id/applicants" element={<ProtectedRoute><Applicants /></ProtectedRoute>}/>
         <Route path="/project/:id/edit" element={<ProtectedRoute><EditProject /></ProtectedRoute>}/>
-        <Route path="*" element={<NotFound />} />
         <Route path="/chat/:projectId" element={<ProtectedRoute><Chat/></ProtectedRoute>} />
         <Route path='/verify-email' element={<VerifyEmail/>}/>
         <Route path='/forgot-password' element={<ForgotPassword/>}/>
         <Route path='/reset-password' element={<ResetPassword/>}/>
         <Route path='/oauth-success' element={<OAuthSuccess/>}/>
         <Route path="/matchmaking" element={<ProjectMatchmaking />} />
+
+        <Route path="*" element={<NotFound />} />
         </Routes>
     </BrowserRouter>
   )
