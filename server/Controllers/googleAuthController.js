@@ -21,9 +21,8 @@ export const googleLogin = (req, res) => {
 export const googleCallback = async (req, res) => {
   const { code } = req.query;
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-
   if (!code) {
-    return res.redirect(`${frontendUrl}/auth?error=google_login_failed`);
+    return res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
   }
 
   try {
@@ -44,9 +43,8 @@ export const googleCallback = async (req, res) => {
     });
 
     const { id: googleId, email, name, picture } = profileResponse.data;
-
     if (!email) {
-      return res.redirect(`${frontendUrl}/auth?error=no_email_provided`);
+      return res.redirect(`${frontendUrl}/login?error=no_email_provided`);
     }
 
     // Find existing user or create new one
@@ -92,6 +90,6 @@ export const googleCallback = async (req, res) => {
     return res.redirect(`${frontendUrl}/oauth-success?token=${token}&user=${userPayload}`);
   } catch (error) {
     console.error('Google Auth Error:', error.response?.data || error.message);
-    return res.redirect(`${frontendUrl}/auth?error=google_login_failed`);
+    return res.redirect(`${frontendUrl}/login?error=google_login_failed`);
   }
 };
