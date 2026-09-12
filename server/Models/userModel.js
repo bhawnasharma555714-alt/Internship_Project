@@ -31,12 +31,11 @@ const userSchema = new mongoose.Schema({
   resetPasswordTokenHash: { type: String, default: null },
   resetPasswordTokenExpiry: { type: Date, default: null },
 
-  githubId: { type: String, default: null, unique: true, sparse: true },
-  githubAccessToken: { type: String, default: null, select: false },
-  githubUsername: { type: String, default: null },
+  githubId: { type: String, unique: true, sparse: true },
+  githubAccessToken: { type: String, select: false },
+  githubUsername: { type: String },
   
-  // 👈 FIX: Added unique: true alongside sparse: true
-  googleId: { type: String, default: null, unique: true, sparse: true },
+  googleId: { type: String, unique: true, sparse: true },
 });
 
 userSchema.set("toJSON", {
