@@ -65,7 +65,6 @@ const Chat = () => {
     useEffect(() => {
         if (!projectId) return;
 
-        // Connect socket if disconnected
         if (!socket.connected) {
             socket.connect();
         }
@@ -129,13 +128,13 @@ const Chat = () => {
 
     return (
         <Layout>
-            <div className="flex items-center mb-6">
+            <div className="flex items-center mb-4 sm:mb-6">
                 <ArrowLeft
                     className="text-slate-400 h-6 w-6 font-bold hover:text-slate-200 cursor-pointer"
                     onClick={() => navigate(`/projects/${projectId}`)}
                 />
                 <button
-                    className="pl-2 font-semibold text-slate-300 text-lg hover:text-white cursor-pointer"
+                    className="pl-2 font-semibold text-slate-300 text-base sm:text-lg hover:text-white cursor-pointer"
                     onClick={() => navigate(`/projects/${projectId}`)}
                 >
                     Back to Project
@@ -143,8 +142,8 @@ const Chat = () => {
             </div>
 
             {chatError ? (
-                <div className="max-w-xl mx-auto border border-sky-700 bg-slate-900/60 backdrop-blur-md mt-10 p-8 text-center rounded-2xl shadow-xl">
-                    <h2 className="text-xl font-bold text-white">🔒 Chat Access Restricted</h2>
+                <div className="max-w-xl mx-auto border border-sky-700 bg-slate-900/60 backdrop-blur-md mt-6 sm:mt-10 p-6 sm:p-8 text-center rounded-2xl shadow-xl">
+                    <h2 className="text-lg sm:text-xl font-bold text-white">🔒 Chat Access Restricted</h2>
                     <p className="text-slate-400 text-xs mt-3">{chatError}</p>
                     <button
                         onClick={() => navigate(`/projects/${projectId}`)}
@@ -158,15 +157,17 @@ const Chat = () => {
                     {/* Chat Box Container */}
                     <div className="flex-1 w-full border border-sky-700 rounded-2xl overflow-hidden shadow-xl bg-slate-900/60 backdrop-blur-md">
                         {/* Chat Header */}
-                        <div className="bg-slate-900/80 px-6 py-4 border-b border-sky-700/60 flex items-center justify-between">
+                        <div className="bg-slate-900/80 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-sky-700/60 flex items-center justify-between">
                             <div>
-                                <h1 className="text-lg md:text-xl font-bold text-white">{projectTitle}</h1>
-                                <p className="text-slate-400 text-xs mt-0.5">Real-time team chatroom</p>
+                                <h1 className="text-base sm:text-lg md:text-xl font-bold text-white truncate max-w-[260px] sm:max-w-none">
+                                    {projectTitle}
+                                </h1>
+                                <p className="text-slate-400 text-[11px] sm:text-xs mt-0.5">Real-time team chatroom</p>
                             </div>
                         </div>
 
                         {/* Messages Area */}
-                        <div className="h-[460px] overflow-y-auto p-6 bg-slate-950/40 flex flex-col gap-3">
+                        <div className="h-[400px] sm:h-[460px] overflow-y-auto p-3 sm:p-6 bg-slate-950/40 flex flex-col gap-2.5 sm:gap-3">
                             {messages.length === 0 ? (
                                 <div className="flex items-center justify-center h-full">
                                     <p className="text-slate-500 text-xs">No messages yet. Start the conversation!</p>
@@ -183,7 +184,7 @@ const Chat = () => {
                                             className={`flex ${isMyMessage ? "justify-end" : "justify-start"}`}
                                         >
                                             <div
-                                                className={`max-w-[75%] rounded-xl px-4 py-2.5 text-xs ${
+                                                className={`max-w-[85%] sm:max-w-[75%] rounded-xl px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs ${
                                                     isMyMessage
                                                         ? "bg-sky-600 text-white"
                                                         : "bg-slate-800 border border-slate-700/80 text-slate-200"
@@ -195,9 +196,9 @@ const Chat = () => {
                                                     </strong>
                                                 )}
 
-                                                <div className="flex items-end justify-between gap-3">
+                                                <div className="flex items-end justify-between gap-2.5 sm:gap-3">
                                                     <p className="break-words leading-relaxed">{msg.message}</p>
-                                                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                                    <div className="flex items-center gap-1 shrink-0 ml-1.5">
                                                         <small className={`text-[10px] ${isMyMessage ? "text-sky-200" : "text-slate-400"}`}>
                                                             {new Date(msg.createdAt).toLocaleTimeString([], {
                                                                 hour: "2-digit",
@@ -209,7 +210,7 @@ const Chat = () => {
                                                                 type="button"
                                                                 onClick={() => handleDeleteMessage(msg.id || msg._id)}
                                                                 title="Delete message"
-                                                                className="cursor-pointer text-rose-300 hover:text-rose-100 transition"
+                                                                className="cursor-pointer text-rose-300 hover:text-rose-100 transition ml-0.5"
                                                             >
                                                                 <Trash2 size={12} />
                                                             </button>
@@ -225,7 +226,7 @@ const Chat = () => {
                         </div>
 
                         {/* Message Input Bar */}
-                        <div className="bg-slate-900/90 border-t border-sky-700/60 p-3.5 flex gap-2">
+                        <div className="bg-slate-900/90 border-t border-sky-700/60 p-2.5 sm:p-3.5 flex items-center gap-2">
                             <input
                                 type="text"
                                 value={newMessage}
@@ -234,13 +235,13 @@ const Chat = () => {
                                     if (e.key === "Enter") sendMessage();
                                 }}
                                 placeholder="Type a message..."
-                                className="flex-1 bg-[#0B0F17] border border-sky-700/80 text-white rounded-xl px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-sky-500/80 placeholder:text-slate-500"
+                                className="flex-1 bg-[#0B0F17] border border-sky-700/80 text-white rounded-xl px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs outline-none focus:ring-2 focus:ring-sky-500/80 placeholder:text-slate-500 min-w-0"
                             />
                             <button
                                 onClick={sendMessage}
-                                className="bg-sky-600 hover:bg-sky-500 text-white font-semibold px-5 py-2.5 rounded-xl transition cursor-pointer text-xs flex items-center gap-1.5 shadow-sm"
+                                className="bg-sky-600 hover:bg-sky-500 text-white font-semibold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer text-xs flex items-center justify-center gap-1.5 shadow-sm shrink-0"
                             >
-                                <span>Send</span>
+                                <span className="hidden sm:inline">Send</span>
                                 <Send className="w-3.5 h-3.5" />
                             </button>
                         </div>
