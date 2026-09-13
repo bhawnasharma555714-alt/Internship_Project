@@ -2,16 +2,17 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import socket from "../socket";
 import Layout from "../Components/Layout";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Send } from "lucide-react";
 import { useAuth } from "../Context/AuthContext";
 import api from "../services/api";
 import SkillGapSidebar from "../Components/SkillGapSidebar";
+import toast from "react-hot-toast";
+import CustomToast from "../Components/CustomToast";
 
 const Chat = () => {
     const { projectId } = useParams();
     const [chatError, setChatError] = useState("");
     const { user } = useAuth();
-    let isAllowed = true;
     const navigate = useNavigate();
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
@@ -21,7 +22,6 @@ const Chat = () => {
     useEffect(() => {
         if (!projectId) return;
 
-        // Fetch project title
         const fetchProjectDetails = async () => {
             try {
                 const token = localStorage.getItem("token");
@@ -42,28 +42,19 @@ const Chat = () => {
 
     useEffect(() => {
         if (!projectId) return;
+
         const fetchMessages = async () => {
             try {
                 const token = localStorage.getItem("token");
-
                 const response = await api.get(`/messages/${projectId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
-
-                console.log(response.data);
                 setMessages(response.data);
-
             } catch (error: any) {
                 console.error("Error Fetching messages:", error);
-
                 setMessages([]);
-
                 if (error.response?.status === 403) {
-                    setChatError(error.response.data.error);
-                    isAllowed = false;
-                    console.log(isAllowed);
+                    setChatError(error.response.data.error || "Access restricted");
                 }
             }
         };
@@ -73,34 +64,42 @@ const Chat = () => {
 
     useEffect(() => {
         if (!projectId) return;
-        socket.on("joinError", (error) => {
-            setChatError(error);
-        });
+
+        // Connect socket if disconnected
+        if (!socket.connected) {
+            socket.connect();
+        }
 
         socket.emit("joinProject", projectId);
 
+        const handleJoinError = (error: string) => {
+            setChatError(error);
+        };
+
+        const handleMessageError = (error: string) => {
+            toast.custom(
+                () => <CustomToast type="error" title="Message Error" message={error} />,
+                { duration: 2000 }
+            );
+        };
+
+        const handleReceiveMessage = (message: any) => {
+            setMessages((prevMessages) => [...prevMessages, message]);
+        };
+
+        socket.on("joinError", handleJoinError);
+        socket.on("messageError", handleMessageError);
+        socket.on("receiveMessage", handleReceiveMessage);
+
         return () => {
-            socket.off("joinError");
+            socket.off("joinError", handleJoinError);
+            socket.off("messageError", handleMessageError);
+            socket.off("receiveMessage", handleReceiveMessage);
         };
     }, [projectId]);
 
     useEffect(() => {
-        socket.on("receiveMessage", (message) => {
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                message
-            ]);
-        });
-
-        return () => {
-            socket.off("receiveMessage");
-        };
-    }, []);
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({
-            behavior: "smooth"
-        });
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
     const sendMessage = () => {
@@ -108,36 +107,23 @@ const Chat = () => {
 
         socket.emit("sendMessage", {
             projectId,
-            message: newMessage
+            message: newMessage.trim()
         });
 
         setNewMessage("");
     };
 
     const handleDeleteMessage = async (messageId: string) => {
-        const confirmDelete = window.confirm(
-            "Are you sure you want to delete this message?"
-        );
+        const confirmDelete = window.confirm("Are you sure you want to delete this message?");
+        if (!confirmDelete) return;
 
-        if (!confirmDelete) {
-            return;
-        }
         try {
             await api.delete(`/messages/${messageId}`, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             });
-
-            setMessages((prev) =>
-                prev.filter((message) => message.id !== messageId)
-            );
-
+            setMessages((prev) => prev.filter((msg) => (msg.id || msg._id) !== messageId));
         } catch (error: any) {
-            console.error(
-                "Error deleting message:",
-                error.response?.data || error
-            );
+            console.error("Error deleting message:", error.response?.data || error);
         }
     };
 
@@ -145,12 +131,11 @@ const Chat = () => {
         <Layout>
             <div className="flex items-center mb-6">
                 <ArrowLeft
-                    className="text-slate-400 h-8 w-8 font-bold hover:text-slate-300 cursor-pointer"
+                    className="text-slate-400 h-6 w-6 font-bold hover:text-slate-200 cursor-pointer"
                     onClick={() => navigate(`/projects/${projectId}`)}
                 />
-
                 <button
-                    className="pl-2 font-semibold text-slate-400 text-2xl hover:text-slate-300 cursor-pointer"
+                    className="pl-2 font-semibold text-slate-300 text-lg hover:text-white cursor-pointer"
                     onClick={() => navigate(`/projects/${projectId}`)}
                 >
                     Back to Project
@@ -158,111 +143,79 @@ const Chat = () => {
             </div>
 
             {chatError ? (
-                <div className="max-w-2xl mx-auto border-4 border-slate-700 mt-10 p-10 text-center rounded-2xl">
-                    <h2 className="text-2xl font-bold text-white">
-                        🔒 Chat Access Restricted
-                    </h2>
-
-                    <p className="text-slate-400 mt-4">
-                        {chatError}
-                    </p>
-
+                <div className="max-w-xl mx-auto border border-sky-700 bg-slate-900/60 backdrop-blur-md mt-10 p-8 text-center rounded-2xl shadow-xl">
+                    <h2 className="text-xl font-bold text-white">🔒 Chat Access Restricted</h2>
+                    <p className="text-slate-400 text-xs mt-3">{chatError}</p>
                     <button
                         onClick={() => navigate(`/projects/${projectId}`)}
-                        className="mt-6 bg-sky-700 text-white font-medium px-6 py-3 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer"
+                        className="mt-6 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition cursor-pointer"
                     >
                         Back to Project
                     </button>
                 </div>
             ) : (
-                /* Main Container: Chat on the Left, Skill Gap Sidebar on the Right */
                 <div className="flex flex-col lg:flex-row gap-6 items-start max-w-7xl mx-auto">
-                    
                     {/* Chat Box Container */}
-                    <div className="flex-1 w-full border-4 border-slate-700 rounded-2xl overflow-hidden hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] bg-slate-900/40">
-
+                    <div className="flex-1 w-full border border-sky-700 rounded-2xl overflow-hidden shadow-xl bg-slate-900/60 backdrop-blur-md">
                         {/* Chat Header */}
-                        <div className="bg-slate-800/70 px-6 py-5 border-b border-slate-700">
-                            <h1 className="text-xl md:text-2xl font-bold text-white">
-                                {projectTitle}
-                            </h1>
-
-                            <p className="text-slate-400 mt-1 text-sm">
-                                Collaborate with your project members
-                            </p>
+                        <div className="bg-slate-900/80 px-6 py-4 border-b border-sky-700/60 flex items-center justify-between">
+                            <div>
+                                <h1 className="text-lg md:text-xl font-bold text-white">{projectTitle}</h1>
+                                <p className="text-slate-400 text-xs mt-0.5">Real-time team chatroom</p>
+                            </div>
                         </div>
 
                         {/* Messages Area */}
-                        <div className="h-[480px] overflow-y-auto p-6 bg-slate-900/50 flex flex-col gap-3">
-
+                        <div className="h-[460px] overflow-y-auto p-6 bg-slate-950/40 flex flex-col gap-3">
                             {messages.length === 0 ? (
                                 <div className="flex items-center justify-center h-full">
-                                    <p className="text-slate-500">
-                                        No messages yet. Start the conversation!
-                                    </p>
+                                    <p className="text-slate-500 text-xs">No messages yet. Start the conversation!</p>
                                 </div>
                             ) : (
                                 messages.map((msg) => {
-                                    const isMyMessage =
-                                        String(msg.sender?.id || msg.sender?._id) === String(user?.id);
+                                    const currentUserId = String(user?.id || (user as any)?._id);
+                                    const senderId = String(msg.sender?.id || msg.sender?._id || msg.sender);
+                                    const isMyMessage = senderId === currentUserId;
 
                                     return (
                                         <div
                                             key={msg.id || msg._id}
-                                            className={`flex ${
-                                                isMyMessage
-                                                    ? "justify-end"
-                                                    : "justify-start"
-                                            }`}
+                                            className={`flex ${isMyMessage ? "justify-end" : "justify-start"}`}
                                         >
                                             <div
-                                                className={`max-w-[70%] rounded-xl px-5 py-3 opacity-100 transition-opacity ${
+                                                className={`max-w-[75%] rounded-xl px-4 py-2.5 text-xs ${
                                                     isMyMessage
-                                                        ? "bg-slate-800 border border-slate-800 text-white hover:opacity-80"
-                                                        : "bg-slate-800 border border-slate-700 text-slate-300"
+                                                        ? "bg-sky-600 text-white"
+                                                        : "bg-slate-800 border border-slate-700/80 text-slate-200"
                                                 }`}
                                             >
-
                                                 {!isMyMessage && (
-                                                    <strong className="text-sky-400 block mb-1">
-                                                        {msg.sender?.name}
+                                                    <strong className="text-sky-400 block text-[11px] mb-1">
+                                                        {msg.sender?.name || "Teammate"}
                                                     </strong>
                                                 )}
 
-                                                <div className="flex items-end gap-3">
-
-                                                    <p className="break-words">
-                                                        {msg.message}
-                                                    </p>
-
-                                                    <small
-                                                        className={`text-xs whitespace-nowrap ${
-                                                            isMyMessage
-                                                                ? "text-sky-200"
-                                                                : "text-slate-500"
-                                                        }`}
-                                                    >
-                                                        {new Date(
-                                                            msg.createdAt
-                                                        ).toLocaleTimeString([], {
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
-                                                        })}
-                                                    </small>
-
-                                                    {isMyMessage && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleDeleteMessage(msg.id || msg._id)}
-                                                            title="Delete message"
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Trash2 size={14} className="text-red-500 hover:text-red-400" />
-                                                        </button>
-                                                    )}
-
+                                                <div className="flex items-end justify-between gap-3">
+                                                    <p className="break-words leading-relaxed">{msg.message}</p>
+                                                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                                        <small className={`text-[10px] ${isMyMessage ? "text-sky-200" : "text-slate-400"}`}>
+                                                            {new Date(msg.createdAt).toLocaleTimeString([], {
+                                                                hour: "2-digit",
+                                                                minute: "2-digit",
+                                                            })}
+                                                        </small>
+                                                        {isMyMessage && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteMessage(msg.id || msg._id)}
+                                                                title="Delete message"
+                                                                className="cursor-pointer text-rose-300 hover:text-rose-100 transition"
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
-
                                             </div>
                                         </div>
                                     );
@@ -271,42 +224,34 @@ const Chat = () => {
                             <div ref={messagesEndRef} />
                         </div>
 
-                        {/* Message Input */}
-                        <div className="bg-slate-800/70 border-t border-slate-700 p-4 flex gap-3">
-
+                        {/* Message Input Bar */}
+                        <div className="bg-slate-900/90 border-t border-sky-700/60 p-3.5 flex gap-2">
                             <input
                                 type="text"
                                 value={newMessage}
-                                onChange={(e) =>
-                                    setNewMessage(e.target.value)
-                                }
+                                onChange={(e) => setNewMessage(e.target.value)}
                                 onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        sendMessage();
-                                    }
+                                    if (e.key === "Enter") sendMessage();
                                 }}
                                 placeholder="Type a message..."
-                                className="flex-1 bg-slate-900 border border-slate-600 text-white rounded-lg px-4 py-3 outline-none focus:border-sky-500 placeholder:text-slate-500"
+                                className="flex-1 bg-[#0B0F17] border border-sky-700/80 text-white rounded-xl px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-sky-500/80 placeholder:text-slate-500"
                             />
-
                             <button
                                 onClick={sendMessage}
-                                className="bg-sky-700 text-white font-medium px-6 py-3 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer"
+                                className="bg-sky-600 hover:bg-sky-500 text-white font-semibold px-5 py-2.5 rounded-xl transition cursor-pointer text-xs flex items-center gap-1.5 shadow-sm"
                             >
-                                Send
+                                <span>Send</span>
+                                <Send className="w-3.5 h-3.5" />
                             </button>
-
                         </div>
-
                     </div>
 
-                    {/* Skill Gap Analysis Sidebar */}
+                    {/* Sidebar */}
                     {projectId && (
                         <div className="w-full lg:w-80 shrink-0">
                             <SkillGapSidebar projectId={projectId} />
                         </div>
                     )}
-
                 </div>
             )}
         </Layout>
