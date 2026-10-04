@@ -182,14 +182,17 @@ function Project() {
 
                                         {/* Skill Tags */}
                                         <div className="flex flex-wrap gap-1.5 mt-4">
-                                            {project.requiredSkills?.slice(0, 3).map((skill, index) => (
-                                                <span
-                                                    key={`${skill}-${index}`}
-                                                    className="bg-slate-800/80 border border-slate-700/60 text-sky-300 px-2.5 py-1 rounded-md text-[11px] font-medium"
-                                                >
-                                                    {skill}
-                                                </span>
-                                            ))}
+                                            {project.requiredSkills?.slice(0, 3).map((skill, index) => {
+                                                const projectId = project.id || (project as any)._id;
+                                                return (
+                                                    <span
+                                                        key={`${projectId}-skill-${skill}-${index}`} // ✅ Guaranteed globally unique key
+                                                        className="bg-slate-800/80 border border-slate-700/60 text-sky-300 px-2.5 py-1 rounded-md text-[11px] font-medium"
+                                                    >
+                                                        {skill}
+                                                    </span>
+                                                );
+                                            })}
                                             {project.requiredSkills?.length > 3 && (
                                                 <span className="px-2 py-1 rounded-md bg-slate-800 text-slate-400 text-[10px] font-medium border border-slate-700/60">
                                                     +{project.requiredSkills.length - 3}

@@ -29,23 +29,11 @@ interface UniversityOption {
 
 interface LocationOption {
   display_name: string;
+  address?: {
+    country?: string;
+    country_code?: string;
+  };
 }
-
-// Fallback local list of major institutions
-const POPULAR_UNIVERSITIES: UniversityOption[] = [
-  { name: 'Indian Institute of Technology Bombay (IIT Bombay)', country: 'India' },
-  { name: 'Indian Institute of Technology Delhi (IIT Delhi)', country: 'India' },
-  { name: 'Indian Institute of Technology Madras (IIT Madras)', country: 'India' },
-  { name: 'Indian Institute of Technology Kanpur (IIT Kanpur)', country: 'India' },
-  { name: 'Indian Institute of Science (IISc) Bangalore', country: 'India' },
-  { name: 'Delhi Technological University (DTU)', country: 'India' },
-  { name: 'Vellore Institute of Technology (VIT)', country: 'India' },
-  { name: 'Stanford University', country: 'United States' },
-  { name: 'Massachusetts Institute of Technology (MIT)', country: 'United States' },
-  { name: 'Harvard University', country: 'United States' },
-  { name: 'University of Oxford', country: 'United Kingdom' },
-  { name: 'University of Cambridge', country: 'United Kingdom' },
-];
 
 export default function Profile(): React.ReactElement {
   const { user, updateUser } = useAuth();
@@ -58,6 +46,7 @@ export default function Profile(): React.ReactElement {
   const [skills, setSkills] = useState<string>('');
   const [interests, setInterests] = useState<string>('');
   const [location, setLocation] = useState<string>('');
+  const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [university, setUniversity] = useState<string>('');
   const [jobProfile, setJobProfile] = useState<string>('');
   const [branch, setBranch] = useState<string>('');
@@ -84,6 +73,11 @@ export default function Profile(): React.ReactElement {
       setUniversity(user.university || '');
       setJobProfile(user.jobProfile || '');
       setBranch(user.branch || '');
+
+      if (user.location) {
+        const parts = user.location.split(',');
+        setSelectedCountry(parts[parts.length - 1].trim());
+      }
     }
   }, [user]);
 
@@ -101,14 +95,7 @@ export default function Profile(): React.ReactElement {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // --- Helper: Extract Country Name safely from Nominatim Display String ---
-  const getCountryFromLocation = (locString: string): string => {
-    if (!locString) return '';
-    const parts = locString.split(',');
-    return parts[parts.length - 1].trim().toLowerCase();
-  };
-
-  // --- 1. Debounced Location API Autocomplete (Nominatim OpenStreetMap) ---
+  // --- 1. Location Autocomplete API (Nominatim OpenStreetMap) ---
   useEffect(() => {
     if (!location.trim() || location.length < 2) {
       setLocationSuggestions([]);
@@ -136,7 +123,7 @@ export default function Profile(): React.ReactElement {
     return () => clearTimeout(timer);
   }, [location]);
 
-  // --- Debounced & Location-Filtered University Autocomplete ---
+  // --- 2. Filtered & Strict University Autocomplete API (Wikidata HTTPS Search API) ---
 useEffect(() => {
   if (!university.trim() || university.length < 2) {
     setUniversitySuggestions([]);
@@ -147,61 +134,102 @@ useEffect(() => {
   const timer = setTimeout(async () => {
     setLoadingUniversity(true);
     const query = university.trim();
-    const userCountry = getCountryFromLocation(location);
 
     try {
-      // 1. Build light HTTPS API query (Hipo Labs endpoint over https)
-      let apiUrl = `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}`;
-      if (userCountry) {
-        apiUrl += `&country=${encodeURIComponent(userCountry)}`;
-      }
+      // 1. Query Wikidata search endpoint
+      const wikidataUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(
+        query
+      )}&language=en&limit=30&type=item&format=json&origin=*`;
 
-      const response = await fetch(apiUrl);
+      const response = await fetch(wikidataUrl);
       const data = await response.json();
 
-      let results = data;
+      if (data.search && data.search.length > 0) {
+        // Words that indicate non-educational entities
+        const excludedKeywords = [
+          'metro station',
+          'station',
+          'award',
+          'honour',
+          'stadium',
+          'constituency',
+          'bus stop',
+          'railway',
+          'building',
+          'cricket ground',
+          'campus location',
+        ];
 
-      // 2. Fallback: If country filtering yielded no results, query globally by university name
-      if ((!results || results.length === 0) && userCountry) {
-        const fallbackRes = await fetch(
-          `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}`
-        );
-        results = await fallbackRes.json();
-      }
+        // Educational keywords to prioritize
+        const eduKeywords = [
+          'university',
+          'college',
+          'institute',
+          'institution',
+          'school',
+          'academy',
+          'polytechnic',
+          'education',
+        ];
 
-      if (Array.isArray(results) && results.length > 0) {
-        const formatted: UniversityOption[] = results.slice(0, 8).map((u: any) => ({
-          name: u.name,
-          country: u.country,
+        // 2. Strict Filter: Remove non-university entities
+        let filtered = data.search.filter((item: any) => {
+          const label = (item.label || '').toLowerCase();
+          const desc = (item.description || '').toLowerCase();
+
+          // Exclude metro stations, awards, etc.
+          const hasExcludedWord = excludedKeywords.some(
+            (word) => label.includes(word) || desc.includes(word)
+          );
+
+          if (hasExcludedWord) return false;
+
+          // Must match educational descriptions OR user search query
+          const isEduRelated = eduKeywords.some(
+            (word) => desc.includes(word) || label.includes(word)
+          );
+
+          return isEduRelated;
+        });
+
+        // 3. Location Filter: Match selectedCountry if present
+        if (selectedCountry.trim()) {
+          const targetCountry = selectedCountry.toLowerCase().trim();
+          const countryScoped = filtered.filter((item: any) => {
+            const desc = (item.description || '').toLowerCase();
+            return desc.includes(targetCountry);
+          });
+
+          if (countryScoped.length > 0) {
+            filtered = countryScoped;
+          }
+        }
+
+        // Format clean results
+        const formatted: UniversityOption[] = filtered.slice(0, 8).map((item: any) => ({
+          name: item.label,
+          country: item.description || (selectedCountry ? selectedCountry : 'Educational Institution'),
         }));
-        setUniversitySuggestions(formatted);
-        setLoadingUniversity(false);
-        return;
+
+        if (formatted.length > 0) {
+          setUniversitySuggestions(formatted);
+          setLoadingUniversity(false);
+          return;
+        }
       }
-    } catch (err) {
-      console.warn('Live API fetch failed, checking local search:', err);
+    } catch (error) {
+      console.error('Wikidata API search error:', error);
     }
 
-    // 3. Secondary Local Fallback
-    const localMatches = POPULAR_UNIVERSITIES.filter((u) => {
-      const matchesName = u.name.toLowerCase().includes(query.toLowerCase());
-      const matchesCountry = userCountry ? u.country.toLowerCase().includes(userCountry.toLowerCase()) : true;
-      return matchesName && matchesCountry;
-    });
-
-    if (localMatches.length > 0) {
-      setUniversitySuggestions(localMatches);
-    } else {
-      setUniversitySuggestions([
-        { name: query, country: userCountry ? userCountry.toUpperCase() : 'Custom Entry' },
-      ]);
-    }
-
+    // Dynamic Fallback
+    setUniversitySuggestions([
+      { name: query, country: selectedCountry ? selectedCountry.toUpperCase() : 'Custom Entry' },
+    ]);
     setLoadingUniversity(false);
-  }, 350);
+  }, 300);
 
   return () => clearTimeout(timer);
-}, [university, location]);
+}, [university, selectedCountry]);
 
   const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -388,15 +416,15 @@ useEffect(() => {
               <Sparkles className="w-5 h-5 text-purple-400" /> Edit Profile Details
             </h2>
             <p className="text-xs text-slate-400 mb-6">
-              Select your location first to automatically filter university suggestions for accurate campus feed matching.
+              Search and select your location and university using live real-time API lookup.
             </p>
 
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               
-              {/* Location First Flow */}
+              {/* Location & University Flow */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                {/* Location Input */}
+                {/* Location Input with Nominatim Autocomplete */}
                 <div ref={locationRef} className="relative">
                   <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-sky-400" /> 1. Location / Country
@@ -425,6 +453,12 @@ useEffect(() => {
                           key={idx}
                           onClick={() => {
                             setLocation(item.display_name);
+                            if (item.address?.country) {
+                              setSelectedCountry(item.address.country);
+                            } else {
+                              const parts = item.display_name.split(',');
+                              setSelectedCountry(parts[parts.length - 1].trim());
+                            }
                             setShowLocationDropdown(false);
                           }}
                           className="p-2.5 text-xs text-slate-200 hover:bg-sky-600/30 hover:text-white cursor-pointer transition border-b border-slate-800/50 last:border-0 truncate"
@@ -436,7 +470,7 @@ useEffect(() => {
                   )}
                 </div>
 
-                {/* Country-Aware University Input */}
+                {/* University Input with Wikidata Autocomplete */}
                 <div ref={universityRef} className="relative">
                   <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
                     <GraduationCap className="w-3.5 h-3.5 text-sky-400" /> 2. University / Organization
@@ -450,7 +484,7 @@ useEffect(() => {
                         setShowUniversityDropdown(true);
                       }}
                       onFocus={() => setShowUniversityDropdown(true)}
-                      placeholder="Search university..."
+                      placeholder="Search university globally..."
                       className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 pr-8 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
                     />
                     {loadingUniversity && (
@@ -470,7 +504,7 @@ useEffect(() => {
                           className="p-2.5 text-xs text-slate-200 hover:bg-sky-600/30 hover:text-white cursor-pointer transition border-b border-slate-800/50 last:border-0 flex flex-col"
                         >
                           <span className="font-semibold">{item.name}</span>
-                          <span className="text-[10px] text-slate-400">{item.country}</span>
+                          <span className="text-[10px] text-slate-400 truncate">{item.country}</span>
                         </div>
                       ))}
                     </div>
@@ -578,4 +612,4 @@ useEffect(() => {
       )}
     </Layout>
   );
-} 
+}
