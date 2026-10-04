@@ -1,9 +1,13 @@
 import Project from "../Models/projectModel.js";
 import Application from "../Models/applicationModel.js";
-import User from "../Models/userModel.js"
+import User from "../Models/userModel.js";
 import { analyzeProjectDraft } from "../utils/projectAnalyzer.js";
 import { analyzeTeamSkillGap } from "../utils/skillGapAnalyzer.js";
 import { determineCreatorRole } from "../utils/projectAnalyzer.js";
+import { GoogleGenAI } from "@google/genai";
+
+// Initialize Gemini SDK with environment API key
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const createProject = async (req, res) => {
     try {
@@ -21,7 +25,6 @@ export const createProject = async (req, res) => {
 
         const skillsArray = Array.isArray(skills) ? skills : skills.split(",").map((s) => s.trim());
 
-        // Determine creator's specific role based on their profile + final project content
         const creatorRole = await determineCreatorRole(creatorUser, {
             title,
             desc,
@@ -36,7 +39,7 @@ export const createProject = async (req, res) => {
             membersRequired: Number(members),
             aiAnalysis: {
                 ...(aiAnalysis || {}),
-                creatorRole, // Saved in database
+                creatorRole,
                 analyzedAt: new Date(),
             },
         });
@@ -51,20 +54,16 @@ export const updateProject = async (req, res) => {
     try {
         const projectId = req.params.id;
 
-        // Find existing project
         const project = await Project.findById(projectId);
         if (!project) {
             return res.status(404).json({ error: "Project not found!" });
         }
 
-        // Check ownership
         if (project.creator.toString() !== req.user.id) {
             return res.status(403).json({ error: "You are not authorized to update this project." });
         }
 
         const { title, desc, requiredSkills, skillsRequired, membersRequired, memberRequired, aiAnalysis } = req.body;
-
-        // Fetch creator details to re-evaluate their role based on updated project details
         const creatorUser = await User.findById(req.user.id);
 
         const rawSkills = requiredSkills || skillsRequired || project.requiredSkills;
@@ -72,14 +71,12 @@ export const updateProject = async (req, res) => {
         const updatedTitle = title || project.title;
         const updatedDesc = desc || project.desc;
 
-        // 🎯 Re-evaluate Creator Role with updated project details & creator profile
         const newCreatorRole = await determineCreatorRole(creatorUser, {
             title: updatedTitle,
             desc: updatedDesc,
             requiredSkills: skillsArray,
         });
 
-        // Merge existing aiAnalysis with new suggestions and updated creatorRole
         const updatedAiAnalysis = {
             ...(project.aiAnalysis ? project.aiAnalysis.toObject() : {}),
             ...(aiAnalysis || {}),
@@ -112,17 +109,15 @@ export const updateProject = async (req, res) => {
     }
 };
 
-//http://localhost:3000/api/projects
-export const getAllProjects = async(req,res) => {
-    try{
+export const getAllProjects = async (req, res) => {
+    try {
         const projects = await Project.find().populate("creator", "name");
         res.json(projects);
-    }catch(err){
-        res.status(500).json({error:"Server Error cannot find Projects", e:err.message});
+    } catch (err) {
+        res.status(500).json({ error: "Server Error cannot find Projects", e: err.message });
     }
-}   
+};
 
-// GET /api/projects/:id
 export const getProjectById = async (req, res) => {
     try {
         const project = await Project.findById(req.params.id)
@@ -133,7 +128,6 @@ export const getProjectById = async (req, res) => {
             return res.status(404).json({ error: "Project not found" });
         }
 
-        // Dynamically calculate counts from Application collection
         const acceptedCount = await Application.countDocuments({
             project: req.params.id,
             status: "accepted",
@@ -143,12 +137,11 @@ export const getProjectById = async (req, res) => {
             project: req.params.id,
         });
 
-        // Return project merged with calculated counters
         const responseData = {
             ...project,
             acceptedCount,
             totalApplicants,
-            activeMembers: acceptedCount + 1, // 1 Creator/Leader + Accepted Members
+            activeMembers: acceptedCount + 1,
         };
 
         res.json(responseData);
@@ -166,12 +159,10 @@ export const getMyCreatedProject = async (req, res) => {
 
         const projectsWithCount = await Promise.all(
             projects.map(async (project) => {
-                // Count total applications
                 const applicantCount = await Application.countDocuments({
                     project: project._id,
                 });
 
-                // Count accepted applications dynamically
                 const acceptedCount = await Application.countDocuments({
                     project: project._id,
                     status: "accepted",
@@ -182,7 +173,7 @@ export const getMyCreatedProject = async (req, res) => {
                     id: project._id.toString(),
                     applicantCount,
                     acceptedCount,
-                    activeMembers: acceptedCount + 1, // 1 Creator/Leader + Accepted Members
+                    activeMembers: acceptedCount + 1,
                 };
             })
         );
@@ -192,23 +183,23 @@ export const getMyCreatedProject = async (req, res) => {
         res.status(500).json({ error: "Server Error", e: err.message });
     }
 };
-export const deleteProject = async(req,res) => {
-    try{
+
+export const deleteProject = async (req, res) => {
+    try {
         const projectId = req.params.id;
         const project = await Project.findById(projectId);
-        if(!project) return res.status(404).json({error:"Project Not Found"});
-        if(project.creator.toString() != req.user.id) return res.status(403).json({error:"Unauthorized Access"});
-        await Application.deleteMany({project:projectId});
+        if (!project) return res.status(404).json({ error: "Project Not Found" });
+        if (project.creator.toString() != req.user.id) return res.status(403).json({ error: "Unauthorized Access" });
+        await Application.deleteMany({ project: projectId });
         await Project.findByIdAndDelete(projectId);
-        res.status(200).json({message:"Project Deleted Successfully"});
-    }catch (err) {
+        res.status(200).json({ message: "Project Deleted Successfully" });
+    } catch (err) {
         res.status(500).json({
             error: "Server Error",
             e: err.message
         });
     }
-}
-
+};
 
 export const analyzeDraft = async (req, res) => {
   try {
@@ -220,7 +211,6 @@ export const analyzeDraft = async (req, res) => {
 
     const suggestions = await analyzeProjectDraft({ title, desc, requiredSkills, membersRequired });
 
-    // If an existing projectId is provided, persist analysis to DB
     if (projectId) {
       await Project.findByIdAndUpdate(projectId, {
         aiAnalysis: {
@@ -237,6 +227,69 @@ export const analyzeDraft = async (req, res) => {
   }
 };
 
+export const checkProjectFeasibility = async (req, res) => {
+  try {
+    const { title, description, desc, techStack, requiredSkills } = req.body;
+    const projectDesc = desc || description;
+
+    if (!projectDesc) {
+      return res.status(400).json({ error: "Project description is required for feasibility check." });
+    }
+
+    const prompt = `
+      You are an expert software architect and technical lead. 
+      Analyze the following project idea:
+      Title: ${title || 'Untitled Project'}
+      Description: ${projectDesc}
+      Target Tech Stack / Skills: ${techStack || requiredSkills || 'Not specified'}
+
+      Provide a feasibility assessment in valid JSON format with the following exact keys:
+      - compatibilityAnalysis: A brief evaluation of how well the tech stack fits the project idea.
+      - difficultyScore: A number from 1 to 10 representing overall project difficulty.
+      - architecturalBottlenecks: An array of strings highlighting potential technical bottlenecks or challenges.
+      - taskBlueprint: An array of objects representing a task breakdown structure to get started, where each object has "taskName" and "description".
+    `;
+
+    // Resilient retry loop for 503 high-demand server spikes
+    let retries = 3;
+    let delay = 2000;
+    let response;
+
+    while (retries > 0) {
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+          }
+        });
+        break; // Success, exit retry loop
+      } catch (apiErr) {
+        retries--;
+        if (retries === 0) throw apiErr;
+        console.warn(`Gemini high demand (503). Retrying in ${delay}ms... (${retries} attempts left)`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+      }
+    }
+
+    const result = JSON.parse(response.text);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+
+  } catch (err) {
+    console.error("Feasibility Check Error:", err);
+    return res.status(503).json({ 
+      error: "AI model is currently experiencing high demand. Please try again in a moment.", 
+      details: err.message 
+    });
+  }
+};
+
 export const getSkillGapAnalysis = async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -244,19 +297,15 @@ export const getSkillGapAnalysis = async (req, res) => {
     const project = await Project.findById(projectId);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
-    // Fetch creator details
     const creatorUser = await User.findById(project.creator).select("name email skills bio");
 
-    // Fetch accepted applications with applicant details
     const acceptedApplications = await Application.find({
       project: projectId,
       status: "accepted",
     }).populate("applicant", "name email skills bio");
 
-    // Resolve creator's matched role from persisted AI analysis
     const creatorRole = project.aiAnalysis?.creatorRole || "Project Lead";
 
-    // Format member list with assigned roles
     const teamMembersList = [
       {
         id: creatorUser._id.toString(),
@@ -272,7 +321,6 @@ export const getSkillGapAnalysis = async (req, res) => {
       })),
     ];
 
-    // Format data for AI analysis
     const teamMembers = [
       creatorUser,
       ...acceptedApplications.map((app) => app.applicant),
@@ -283,7 +331,7 @@ export const getSkillGapAnalysis = async (req, res) => {
     return res.status(200).json({
       projectTitle: project.title,
       teamSize: teamMembersList.length,
-      members: teamMembersList, // Array of members with assigned roles
+      members: teamMembersList,
       analysis,
     });
   } catch (err) {
