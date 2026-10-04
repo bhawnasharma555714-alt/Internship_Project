@@ -54,3 +54,36 @@ export const updateProfile = async (req, res) => {
     return res.status(500).json({ message: "Failed to update profile", error: error.message });
   }
 };
+
+// GET /api/users/universities?query=...&country=...
+export const searchUniversities = async (req, res) => {
+  try {
+    const { query, country } = req.query;
+
+    if (!query || query.trim().length < 2) {
+      return res.json([]);
+    }
+
+    let url = `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}`;
+    if (country) {
+      url += `&country=${encodeURIComponent(country)}`;
+    }
+
+    const apiRes = await fetch(url);
+    const data = await apiRes.json();
+
+    // Fallback to global search if country filter returns no results
+    if ((!data || data.length === 0) && country) {
+      const fallbackRes = await fetch(
+        `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}`
+      );
+      const fallbackData = await fallbackRes.json();
+      return res.json(fallbackData.slice(0, 8));
+    }
+
+    return res.json(data.slice(0, 8));
+  } catch (error) {
+    console.error("University Search Error:", error);
+    return res.status(500).json({ message: "Error fetching universities" });
+  }
+};

@@ -1,5 +1,6 @@
 import express from 'express';
 import { getProfile, updateProfile } from '../Controllers/userController.js';
+import {searchUniversities} from '../Controllers/userController.js';
 import { verifyToken } from '../Middlewares/authMiddleWare.js';
 
 const router = express.Router();
@@ -9,6 +10,8 @@ router.get('/profile',verifyToken, getProfile);
 
 //Update My Profile: http://locahost:3000/api/users/profile
 router.patch('/profile',verifyToken,updateProfile);
+
+router.get("/universities", searchUniversities);
 
 
 export default router;
