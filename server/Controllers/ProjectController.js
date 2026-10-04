@@ -67,27 +67,32 @@ export const createProject = async (req, res) => {
 };
 
 // GET /api/projects?scope=campus | global
+// GET /api/projects?scope=campus | global
 export const getAllProjects = async (req, res) => {
     try {
         const { scope, status } = req.query;
         let query = {};
 
-        // Filter by project lifecycle status if provided (e.g., status=recruitment)
         if (status) {
             query.status = status;
         }
 
         // Scope Query Logic
         if (scope === "campus") {
-            // Require logged-in user to identify university
+            // 1. Check if req.user exists from JWT
             if (!req.user || !req.user.id) {
                 return res.status(401).json({ error: "Authentication required for campus feed" });
             }
+
             const user = await User.findById(req.user.id);
+            
+            // 2. Check if user completed their profile university
             if (!user || !user.university) {
-                return res.status(400).json({ error: "User profile has no associated university" });
+                return res.status(400).json({ 
+                    error: "Please complete your profile by adding your University to view campus projects." 
+                });
             }
-            query.scope = "campus";
+
             query.universityName = user.university;
         } else if (scope === "global") {
             query.scope = "global";
@@ -102,7 +107,6 @@ export const getAllProjects = async (req, res) => {
         res.status(500).json({ error: "Server Error cannot find Projects", e: err.message });
     }
 };
-
 // GET /api/projects/:id
 export const getProjectById = async (req, res) => {
     try {
