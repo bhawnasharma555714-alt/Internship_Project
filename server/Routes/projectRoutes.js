@@ -53,8 +53,8 @@ import { verifyToken } from '../Middlewares/authMiddleWare.js';
 const router = express.Router();
 
 router.use((req, res, next) => {
-  console.log(`[Project Router] ${req.method} request received at subpath: "${req.path}"`);
-  next();
+    console.log(`[Project Router] ${req.method} request received at subpath: "${req.path}"`);
+    next();
 });
 
 // Get All Projects : http://localhost:3000/api/projects 

@@ -4,7 +4,23 @@ import type { FormEvent } from "react";
 import api from "../services/api";
 import type { project } from "../types/project";
 import Layout from "../Components/Layout";
-import { ArrowLeft, Users, FileText, Brain, Palette, Send, X, MessageSquare, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { 
+    ArrowLeft, 
+    Users, 
+    FileText, 
+    Brain, 
+    Palette, 
+    Send, 
+    X, 
+    MessageSquare, 
+    CheckCircle2, 
+    Clock, 
+    XCircle,
+    Building2,
+    Globe,
+    PlayCircle,
+    CheckCheck
+} from "lucide-react";
 import Error from "../Components/Error";
 import Loader from "../Components/Loader";
 import toast from "react-hot-toast";
@@ -26,6 +42,7 @@ function ProjectDetails() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
     const [isApplying, setIsApplying] = useState(false);
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [expanded, setExpanded] = useState(false);
 
     // Modal State
@@ -86,6 +103,41 @@ function ProjectDetails() {
         }
     };
 
+    // Handler for Project Owner updating project status (Phase 1 Lifecycle)
+    const handleStatusUpdate = async (newStatus: "recruitment" | "active" | "completed") => {
+        setIsUpdatingStatus(true);
+        try {
+            await api.patch(`/projects/${id}/status`, { status: newStatus });
+            
+            toast.custom(
+                () => (
+                    <CustomToast
+                        type="success"
+                        title="Status Updated"
+                        message={`Project is now in '${newStatus}' mode.`}
+                    />
+                ),
+                { duration: 2000 }
+            );
+
+            // Refresh project state
+            getProject();
+        } catch (err: any) {
+            toast.custom(
+                () => (
+                    <CustomToast
+                        type="error"
+                        title="Status Update Failed"
+                        message={err.response?.data?.error || "Failed to update project status"}
+                    />
+                ),
+                { duration: 2500 }
+            );
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
+
     const handleApplySubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsApplying(true);
@@ -131,6 +183,8 @@ function ProjectDetails() {
     if (loading) return <Loader />;
     if (error) return <Error className="h-50 w-50 md:h-80 md:w-80" error={error} />;
 
+    const activeMembersCount = project?.members?.length || (project as any)?.activeMembers || 1;
+
     return (
         <Layout>
             <div className="flex items-center mb-6">
@@ -144,8 +198,39 @@ function ProjectDetails() {
             </div>
 
             {project && (
-                <div className="max-w-2xl mx-auto border-4 border-slate-700 mt-6 p-8 md:p-10 text-left rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] bg-slate-900/50">
-                    <div className="flex flex-col gap-2">
+                <div className="max-w-3xl mx-auto border-4 border-slate-700 mt-6 p-8 md:p-10 text-left rounded-2xl hover:border-slate-600 hover:shadow-[0_0_20px_rgba(14,165,233,0.08)] bg-slate-900/50">
+                    
+                    {/* Phase 1 Metadata Header (Scope & Status) */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-800 text-xs font-semibold">
+                        <div className="flex items-center gap-2">
+                            <span className="flex items-center gap-1.5 bg-slate-800 text-sky-400 px-3 py-1 rounded-lg border border-slate-700">
+                                <Building2 className="w-3.5 h-3.5" />
+                                {project.universityName || (project.creator as any)?.university || "Campus"}
+                            </span>
+                            <span className="flex items-center gap-1 bg-slate-800/80 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700/60 capitalize">
+                                <Globe className="w-3 h-3 text-slate-400" />
+                                {project.scope || "campus"}
+                            </span>
+                        </div>
+
+                        {/* Status Badge */}
+                        {project.status === "active" ? (
+                            <span className="bg-sky-500/10 border border-sky-500/30 text-sky-400 px-3 py-1 rounded-full text-xs font-bold">
+                                ● Active Build Mode
+                            </span>
+                        ) : project.status === "completed" ? (
+                            <span className="bg-slate-700/50 border border-slate-600 text-slate-400 px-3 py-1 rounded-full text-xs font-bold">
+                                ✓ Completed
+                            </span>
+                        ) : (
+                            <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                Recruitment Open
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col gap-2 mt-4">
                         <h2 className="text-2xl md:text-4xl font-bold text-white">{project.title}</h2>
                         {isOwner && (
                             <div className="inline-flex w-fit bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-3.5 py-1.5 rounded-lg text-xs font-bold">
@@ -201,22 +286,45 @@ function ProjectDetails() {
                     <div className="mt-8 pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div className="flex items-center text-slate-400 font-medium text-sm">
                             <Users className="text-sky-500 w-5 h-5 mr-2" />
-                            <span>{project.membersRequired} Members Required</span>
+                            <span>{activeMembersCount} / {project.membersRequired} Active Members</span>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3">
-                            {/* OWNER VIEW */}
+                            {/* OWNER VIEW & LIFECYCLE CONTROLS */}
                             {isOwner && (
                                 <>
+                                    {/* Lifecycle Action Buttons */}
+                                    {project.status === "recruitment" && (
+                                        <button
+                                            disabled={isUpdatingStatus}
+                                            onClick={() => handleStatusUpdate("active")}
+                                            className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                                        >
+                                            <PlayCircle className="w-4 h-4" />
+                                            <span>Start Active Build</span>
+                                        </button>
+                                    )}
+
+                                    {project.status === "active" && (
+                                        <button
+                                            disabled={isUpdatingStatus}
+                                            onClick={() => handleStatusUpdate("completed")}
+                                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                                        >
+                                            <CheckCheck className="w-4 h-4" />
+                                            <span>Mark as Completed</span>
+                                        </button>
+                                    )}
+
                                     <button
-                                        className="bg-sky-700 hover:bg-sky-600 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition cursor-pointer"
+                                        className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer"
                                         onClick={() => navigate(`/applications/${id}/applicants`)}
                                     >
                                         View Applicants
                                     </button>
 
                                     <button
-                                        className="bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                                        className="bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer flex items-center gap-1.5"
                                         onClick={() => navigate(`/chat/${id}`)}
                                     >
                                         <MessageSquare className="w-4 h-4" />
@@ -261,12 +369,18 @@ function ProjectDetails() {
 
                             {/* NON-OWNER: NOT YET APPLIED */}
                             {!isOwner && !myApplication && (
-                                <button
-                                    className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition cursor-pointer"
-                                    onClick={() => setShowApplyModal(true)}
-                                >
-                                    Apply
-                                </button>
+                                project.status === "recruitment" ? (
+                                    <button
+                                        className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition cursor-pointer shadow-lg"
+                                        onClick={() => setShowApplyModal(true)}
+                                    >
+                                        Apply
+                                    </button>
+                                ) : (
+                                    <div className="bg-slate-800 border border-slate-700 text-slate-400 text-xs font-semibold px-4 py-2.5 rounded-xl">
+                                        Recruitment Closed ({project.status})
+                                    </div>
+                                )
                             )}
                         </div>
                     </div>

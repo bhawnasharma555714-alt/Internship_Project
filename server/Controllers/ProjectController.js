@@ -9,9 +9,20 @@ import { GoogleGenAI } from "@google/genai";
 // Initialize Gemini SDK with environment API key
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+// POST /api/projects
 export const createProject = async (req, res) => {
     try {
-        const { title, desc, requiredSkills, skillsRequired, membersRequired, memberRequired, aiAnalysis } = req.body;
+        const { 
+            title, 
+            desc, 
+            requiredSkills, 
+            skillsRequired, 
+            membersRequired, 
+            memberRequired, 
+            scope, 
+            universityName, 
+            aiAnalysis 
+        } = req.body;
 
         if (!title || !desc) {
             return res.status(400).json({ error: "Title and Desc are required" });
@@ -20,9 +31,12 @@ export const createProject = async (req, res) => {
         const userId = req.user.id;
         const creatorUser = await User.findById(userId);
 
+        if (!creatorUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
         const skills = requiredSkills || skillsRequired || [];
         const members = membersRequired ?? memberRequired ?? 1;
-
         const skillsArray = Array.isArray(skills) ? skills : skills.split(",").map((s) => s.trim());
 
         const creatorRole = await determineCreatorRole(creatorUser, {
@@ -37,6 +51,9 @@ export const createProject = async (req, res) => {
             desc,
             requiredSkills: skillsArray,
             membersRequired: Number(members),
+            members: [userId], // Creator is the first active member
+            scope: scope || "campus",
+            universityName: projectUniversity,
             aiAnalysis: {
                 ...(aiAnalysis || {}),
                 creatorRole,
@@ -47,6 +64,84 @@ export const createProject = async (req, res) => {
         res.status(201).json(newProject);
     } catch (err) {
         res.status(500).json({ error: "Server Error", e: err.message });
+    }
+};
+
+// GET /api/projects?scope=campus | global
+// GET /api/projects?scope=campus | global
+export const getAllProjects = async (req, res) => {
+    try {
+        const { scope, status } = req.query;
+        let query = {};
+
+        if (status) {
+            query.status = status;
+        }
+
+        // Scope Query Logic
+        if (scope === "campus") {
+            // 1. Check if req.user exists from JWT
+            if (!req.user || !req.user.id) {
+                return res.status(401).json({ error: "Authentication required for campus feed" });
+            }
+
+            const user = await User.findById(req.user.id);
+            
+            // 2. Check if user completed their profile university
+            if (!user || !user.university) {
+                return res.status(400).json({ 
+                    error: "Please complete your profile by adding your University to view campus projects." 
+                });
+            }
+
+            query.universityName = user.university;
+        } else if (scope === "global") {
+            query.scope = "global";
+        }
+
+        const projects = await Project.find(query)
+            .populate("creator", "name university")
+            .sort({ createdAt: -1 });
+
+        res.json(projects);
+    } catch (err) {
+        res.status(500).json({ error: "Server Error cannot find Projects", e: err.message });
+    }
+};
+// GET /api/projects/:id
+export const getProjectById = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id)
+            .populate("creator", "name bio university")
+            .populate("members", "name email skills")
+            .lean();
+
+        if (!project) {
+            return res.status(404).json({ error: "Project not found" });
+        }
+
+        const acceptedCount = await Application.countDocuments({
+            project: req.params.id,
+            status: "accepted",
+        });
+
+        const totalApplicants = await Application.countDocuments({
+            project: req.params.id,
+        });
+
+        const responseData = {
+            ...project,
+            acceptedCount,
+            totalApplicants,
+            activeMembers: project.members?.length || acceptedCount + 1,
+        };
+
+        res.json(responseData);
+    } catch (err) {
+        console.error("Get Project By ID Error:", err);
+        res.status(500).json({
+            error: "Server Error: Cannot Find any Project with id #" + req.params.id,
+        });
     }
 };
 
@@ -89,6 +184,8 @@ export const updateProject = async (req, res) => {
             desc: updatedDesc,
             requiredSkills: skillsArray,
             membersRequired: Number(membersRequired ?? memberRequired ?? project.membersRequired),
+            scope: scope || project.scope,
+            universityName: universityName || project.universityName,
             aiAnalysis: updatedAiAnalysis,
         };
 
@@ -99,7 +196,6 @@ export const updateProject = async (req, res) => {
         );
 
         return res.status(200).json(updatedProject);
-
     } catch (err) {
         console.error("Update Project Error:", err);
         return res.status(500).json({
@@ -202,11 +298,28 @@ export const deleteProject = async (req, res) => {
 };
 
 export const analyzeDraft = async (req, res) => {
-  try {
-    const { projectId, title, desc, requiredSkills, membersRequired } = req.body;
+    try {
+        const { projectId, title, desc, requiredSkills, membersRequired } = req.body;
 
-    if (!title && !desc) {
-      return res.status(400).json({ error: "Please provide at least a title or description to analyze." });
+        if (!title && !desc) {
+            return res.status(400).json({ error: "Please provide at least a title or description to analyze." });
+        }
+
+        const suggestions = await analyzeProjectDraft({ title, desc, requiredSkills, membersRequired });
+
+        if (projectId) {
+            await Project.findByIdAndUpdate(projectId, {
+                aiAnalysis: {
+                    ...suggestions,
+                    analyzedAt: new Date(),
+                },
+            });
+        }
+
+        return res.status(200).json(suggestions);
+    } catch (err) {
+        console.error("Project Analysis Error:", err);
+        return res.status(500).json({ error: "Failed to analyze project draft.", details: err.message });
     }
 
     const suggestions = await analyzeProjectDraft({ title, desc, requiredSkills, membersRequired });
@@ -291,11 +404,11 @@ export const checkProjectFeasibility = async (req, res) => {
 };
 
 export const getSkillGapAnalysis = async (req, res) => {
-  try {
-    const { projectId } = req.params;
+    try {
+        const { projectId } = req.params;
 
-    const project = await Project.findById(projectId);
-    if (!project) return res.status(404).json({ error: "Project not found" });
+        const project = await Project.findById(projectId);
+        if (!project) return res.status(404).json({ error: "Project not found" });
 
     const creatorUser = await User.findById(project.creator).select("name email skills bio");
 
@@ -326,7 +439,7 @@ export const getSkillGapAnalysis = async (req, res) => {
       ...acceptedApplications.map((app) => app.applicant),
     ];
 
-    const analysis = await analyzeTeamSkillGap({ project, teamMembers });
+        const analysis = await analyzeTeamSkillGap({ project, teamMembers });
 
     return res.status(200).json({
       projectTitle: project.title,

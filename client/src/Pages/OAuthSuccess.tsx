@@ -6,7 +6,8 @@ import { useAuth } from "../Context/AuthContext";
 export default function OAuthSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { updateUser } = useAuth();
+  // 1. Destructure login instead of updateUser
+  const { login } = useAuth(); 
   const hasProcessed = useRef(false);
 
   useEffect(() => {
@@ -20,13 +21,13 @@ export default function OAuthSuccess() {
       try {
         const decodedUser = JSON.parse(decodeURIComponent(userString));
 
-        localStorage.setItem("token", token);
-        updateUser(decodedUser);
+        // 2. Call login() — this sets both localStorage AND React token/user state
+        login(token, decodedUser);
 
         navigate("/profile", { replace: true });
       } catch (err) {
         console.error("Failed to parse OAuth payload:", err);
-        // Fallback: Store token and redirect to home if parsing user fails
+        // Fallback: Store token manually if user parse fails
         localStorage.setItem("token", token);
         navigate("/", { replace: true });
       }
@@ -34,7 +35,7 @@ export default function OAuthSuccess() {
       hasProcessed.current = true;
       navigate("/login", { replace: true });
     }
-  }, [searchParams, navigate, updateUser]);
+  }, [searchParams, navigate, login]);
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">

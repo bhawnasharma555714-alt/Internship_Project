@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../Context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -19,7 +19,21 @@ import {
   Save,
   Pencil,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
+
+interface UniversityOption {
+  name: string;
+  country: string;
+}
+
+interface LocationOption {
+  display_name: string;
+  address?: {
+    country?: string;
+    country_code?: string;
+  };
+}
 
 export default function Profile(): React.ReactElement {
   const { user, updateUser } = useAuth();
@@ -32,10 +46,23 @@ export default function Profile(): React.ReactElement {
   const [skills, setSkills] = useState<string>('');
   const [interests, setInterests] = useState<string>('');
   const [location, setLocation] = useState<string>('');
+  const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [university, setUniversity] = useState<string>('');
   const [jobProfile, setJobProfile] = useState<string>('');
   const [branch, setBranch] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
+
+  // Autocomplete States
+  const [universitySuggestions, setUniversitySuggestions] = useState<UniversityOption[]>([]);
+  const [loadingUniversity, setLoadingUniversity] = useState<boolean>(false);
+  const [showUniversityDropdown, setShowUniversityDropdown] = useState<boolean>(false);
+
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationOption[]>([]);
+  const [loadingLocation, setLoadingLocation] = useState<boolean>(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState<boolean>(false);
+
+  const universityRef = useRef<HTMLDivElement>(null);
+  const locationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -46,8 +73,163 @@ export default function Profile(): React.ReactElement {
       setUniversity(user.university || '');
       setJobProfile(user.jobProfile || '');
       setBranch(user.branch || '');
+
+      if (user.location) {
+        const parts = user.location.split(',');
+        setSelectedCountry(parts[parts.length - 1].trim());
+      }
     }
   }, [user]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (universityRef.current && !universityRef.current.contains(event.target as Node)) {
+        setShowUniversityDropdown(false);
+      }
+      if (locationRef.current && !locationRef.current.contains(event.target as Node)) {
+        setShowLocationDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // --- 1. Location Autocomplete API (Nominatim OpenStreetMap) ---
+  useEffect(() => {
+    if (!location.trim() || location.length < 2) {
+      setLocationSuggestions([]);
+      setLoadingLocation(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setLoadingLocation(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            location.trim()
+          )}&addressdetails=1&limit=5`
+        );
+        const data = await response.json();
+        setLocationSuggestions(data);
+      } catch (error) {
+        console.error('Error fetching location suggestions:', error);
+      } finally {
+        setLoadingLocation(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [location]);
+
+  // --- 2. Filtered & Strict University Autocomplete API (Wikidata HTTPS Search API) ---
+useEffect(() => {
+  if (!university.trim() || university.length < 2) {
+    setUniversitySuggestions([]);
+    setLoadingUniversity(false);
+    return;
+  }
+
+  const timer = setTimeout(async () => {
+    setLoadingUniversity(true);
+    const query = university.trim();
+
+    try {
+      // 1. Query Wikidata search endpoint
+      const wikidataUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(
+        query
+      )}&language=en&limit=30&type=item&format=json&origin=*`;
+
+      const response = await fetch(wikidataUrl);
+      const data = await response.json();
+
+      if (data.search && data.search.length > 0) {
+        // Words that indicate non-educational entities
+        const excludedKeywords = [
+          'metro station',
+          'station',
+          'award',
+          'honour',
+          'stadium',
+          'constituency',
+          'bus stop',
+          'railway',
+          'building',
+          'cricket ground',
+          'campus location',
+        ];
+
+        // Educational keywords to prioritize
+        const eduKeywords = [
+          'university',
+          'college',
+          'institute',
+          'institution',
+          'school',
+          'academy',
+          'polytechnic',
+          'education',
+        ];
+
+        // 2. Strict Filter: Remove non-university entities
+        let filtered = data.search.filter((item: any) => {
+          const label = (item.label || '').toLowerCase();
+          const desc = (item.description || '').toLowerCase();
+
+          // Exclude metro stations, awards, etc.
+          const hasExcludedWord = excludedKeywords.some(
+            (word) => label.includes(word) || desc.includes(word)
+          );
+
+          if (hasExcludedWord) return false;
+
+          // Must match educational descriptions OR user search query
+          const isEduRelated = eduKeywords.some(
+            (word) => desc.includes(word) || label.includes(word)
+          );
+
+          return isEduRelated;
+        });
+
+        // 3. Location Filter: Match selectedCountry if present
+        if (selectedCountry.trim()) {
+          const targetCountry = selectedCountry.toLowerCase().trim();
+          const countryScoped = filtered.filter((item: any) => {
+            const desc = (item.description || '').toLowerCase();
+            return desc.includes(targetCountry);
+          });
+
+          if (countryScoped.length > 0) {
+            filtered = countryScoped;
+          }
+        }
+
+        // Format clean results
+        const formatted: UniversityOption[] = filtered.slice(0, 8).map((item: any) => ({
+          name: item.label,
+          country: item.description || (selectedCountry ? selectedCountry : 'Educational Institution'),
+        }));
+
+        if (formatted.length > 0) {
+          setUniversitySuggestions(formatted);
+          setLoadingUniversity(false);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Wikidata API search error:', error);
+    }
+
+    // Dynamic Fallback
+    setUniversitySuggestions([
+      { name: query, country: selectedCountry ? selectedCountry.toUpperCase() : 'Custom Entry' },
+    ]);
+    setLoadingUniversity(false);
+  }, 300);
+
+  return () => clearTimeout(timer);
+}, [university, selectedCountry]);
 
   const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -107,13 +289,13 @@ export default function Profile(): React.ReactElement {
       <BackButton />
 
       <div className="max-w-3xl mx-auto py-4 px-2">
-        {/* Main Profile Card */}
+        {/* Main Profile Card View */}
         <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl space-y-6">
           
-          {/* Card Header: Avatar, Name & Edit Trigger */}
+          {/* Card Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-linear-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-sky-400/30 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-sky-400/30 shrink-0">
                 {user?.name ? user.name.charAt(0).toUpperCase() : <UserIcon className="w-7 h-7" />}
               </div>
               <div>
@@ -174,7 +356,7 @@ export default function Profile(): React.ReactElement {
             </p>
           </div>
 
-          {/* Skills Badges with Hover Animation */}
+          {/* Skills Section */}
           <div className="space-y-2">
             <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
               <Code className="w-3.5 h-3.5 text-sky-400" /> Skills
@@ -195,7 +377,7 @@ export default function Profile(): React.ReactElement {
             </div>
           </div>
 
-          {/* Interests Badges with Hover Animation */}
+          {/* Interests Section */}
           <div className="space-y-2">
             <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
               <Heart className="w-3.5 h-3.5 text-purple-400" /> Interests
@@ -234,12 +416,104 @@ export default function Profile(): React.ReactElement {
               <Sparkles className="w-5 h-5 text-purple-400" /> Edit Profile Details
             </h2>
             <p className="text-xs text-slate-400 mb-6">
-              Keep your information updated to get accurate AI project role matches.
+              Search and select your location and university using live real-time API lookup.
             </p>
 
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               
-              {/* Job Profile & University */}
+              {/* Location & University Flow */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Location Input with Nominatim Autocomplete */}
+                <div ref={locationRef} className="relative">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-sky-400" /> 1. Location / Country
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setLocation(e.target.value);
+                        setShowLocationDropdown(true);
+                      }}
+                      onFocus={() => setShowLocationDropdown(true)}
+                      placeholder="Search city or country..."
+                      className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 pr-8 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
+                    />
+                    {loadingLocation && (
+                      <Loader2 className="w-3.5 h-3.5 text-sky-400 animate-spin absolute right-3 top-3" />
+                    )}
+                  </div>
+
+                  {showLocationDropdown && locationSuggestions.length > 0 && (
+                    <div className="absolute z-20 w-full mt-1 bg-[#0F172A] border border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                      {locationSuggestions.map((item, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => {
+                            setLocation(item.display_name);
+                            if (item.address?.country) {
+                              setSelectedCountry(item.address.country);
+                            } else {
+                              const parts = item.display_name.split(',');
+                              setSelectedCountry(parts[parts.length - 1].trim());
+                            }
+                            setShowLocationDropdown(false);
+                          }}
+                          className="p-2.5 text-xs text-slate-200 hover:bg-sky-600/30 hover:text-white cursor-pointer transition border-b border-slate-800/50 last:border-0 truncate"
+                        >
+                          {item.display_name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* University Input with Wikidata Autocomplete */}
+                <div ref={universityRef} className="relative">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
+                    <GraduationCap className="w-3.5 h-3.5 text-sky-400" /> 2. University / Organization
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={university}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setUniversity(e.target.value);
+                        setShowUniversityDropdown(true);
+                      }}
+                      onFocus={() => setShowUniversityDropdown(true)}
+                      placeholder="Search university globally..."
+                      className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 pr-8 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
+                    />
+                    {loadingUniversity && (
+                      <Loader2 className="w-3.5 h-3.5 text-sky-400 animate-spin absolute right-3 top-3" />
+                    )}
+                  </div>
+
+                  {showUniversityDropdown && universitySuggestions.length > 0 && (
+                    <div className="absolute z-20 w-full mt-1 bg-[#0F172A] border border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                      {universitySuggestions.map((item, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => {
+                            setUniversity(item.name);
+                            setShowUniversityDropdown(false);
+                          }}
+                          className="p-2.5 text-xs text-slate-200 hover:bg-sky-600/30 hover:text-white cursor-pointer transition border-b border-slate-800/50 last:border-0 flex flex-col"
+                        >
+                          <span className="font-semibold">{item.name}</span>
+                          <span className="text-[10px] text-slate-400 truncate">{item.country}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+
+              {/* Job Profile & Branch */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
@@ -260,22 +534,6 @@ export default function Profile(): React.ReactElement {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <GraduationCap className="w-3.5 h-3.5 text-sky-400" /> University / Organization
-                  </label>
-                  <input
-                    type="text"
-                    value={university}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUniversity(e.target.value)}
-                    placeholder="e.g. Stanford University"
-                    className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
-                  />
-                </div>
-              </div>
-
-              {/* Branch & Location */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
                     <BookOpen className="w-3.5 h-3.5 text-sky-400" /> Branch / Specialization
                   </label>
                   <input
@@ -283,19 +541,6 @@ export default function Profile(): React.ReactElement {
                     value={branch}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBranch(e.target.value)}
                     placeholder="e.g. Computer Science"
-                    className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-sky-400" /> Location
-                  </label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocation(e.target.value)}
-                    placeholder="e.g. New York, USA"
                     className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
                   />
                 </div>
@@ -343,7 +588,7 @@ export default function Profile(): React.ReactElement {
                 />
               </div>
 
-              {/* Modal Action Buttons */}
+              {/* Modal Actions */}
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
