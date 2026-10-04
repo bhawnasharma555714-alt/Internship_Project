@@ -11,7 +11,7 @@ router.use((req, res, next) => {
 });
 
 //Get All Projects : http://localhost:3000/api/projects 
-router.get('/',getAllProjects);
+router.get('/',verifyToken,getAllProjects);
 
 //getMyCreatedProject : http://locahost:3000/api/project/my
 router.get('/my',verifyToken,getMyCreatedProject);
