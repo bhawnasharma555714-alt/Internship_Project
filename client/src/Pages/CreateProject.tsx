@@ -2,9 +2,11 @@ import { useState, type SyntheticEvent } from "react";
 import api from "../services/api";
 import Layout from "../Components/Layout";
 import BackButton from "../Components/BackButton";
-import { Pencil, Sparkles, Check, X, ArrowRight, PlusCircle } from "lucide-react";
+import { Pencil, Sparkles, Check, X, ArrowRight, PlusCircle, Building2, Globe, Activity } from "lucide-react";
 import toast from "react-hot-toast";
 import CustomToast from "../Components/CustomToast";
+import { useAuth } from "../Context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface AISuggestions {
     suggestedTitle: string;
@@ -15,10 +17,15 @@ interface AISuggestions {
 }
 
 function CreateProject() {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
     const [skillsRequired, setSkillsRequired] = useState("");
     const [memberRequired, setMembersRequired] = useState(1);
+    const [scope, setScope] = useState<"campus" | "global">("campus");
+    const [status, setStatus] = useState<"recruitment" | "active" | "completed">("recruitment");
 
     // AI Analysis Modal State
     const [analyzing, setAnalyzing] = useState(false);
@@ -79,7 +86,7 @@ function CreateProject() {
     const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
         e.preventDefault();
         const toastId = toast.custom(() => (
-            <CustomToast type="info" title="Creating Project" message="Your Project is being created" />
+            <CustomToast type="info" title="Creating Project" message="Your project is being created..." />
         ), { duration: Infinity });
 
         try {
@@ -90,6 +97,9 @@ function CreateProject() {
                 desc,
                 requiredSkills: skillsArray,
                 membersRequired: memberRequired,
+                scope,
+                status,
+                universityName: user?.university || "Campus",
                 aiAnalysis: suggestions ? {
                     ...suggestions,
                     analyzedAt: new Date(),
@@ -98,14 +108,18 @@ function CreateProject() {
 
             toast.remove(toastId);
             toast.custom(() => (
-                <CustomToast type="success" title="Project Created" message="Your project has been created successfully" />
+                <CustomToast type="success" title="Project Created" message="Your project has been created successfully!" />
             ), { duration: 1500 });
 
             setTitle("");
             setDesc("");
             setSkillsRequired("");
             setMembersRequired(1);
+            setScope("campus");
+            setStatus("recruitment");
             setSuggestions(null);
+
+            navigate("/my-projects");
         } catch (err: any) {
             toast.remove(toastId);
             toast.custom(() => (
@@ -155,6 +169,80 @@ function CreateProject() {
                                 onChange={(e) => setTitle(e.target.value)}
                                 className="w-full bg-[#0B0F17] border border-sky-700/80 rounded-xl px-3.5 py-2.5 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
                             />
+                        </div>
+
+                        {/* Project Phase / Status Selector */}
+                        <div>
+                            <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                                <Activity className="w-3.5 h-3.5 text-sky-400" />
+                                <span>Initial Project Phase</span>
+                            </label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setStatus("recruitment")}
+                                    className={`px-3 py-2.5 rounded-xl font-semibold border transition-all cursor-pointer ${
+                                        status === "recruitment"
+                                            ? "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-sm"
+                                            : "bg-[#0B0F17] text-slate-400 border-sky-700/80 hover:text-white"
+                                    }`}
+                                >
+                                    🟢 Recruiting
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setStatus("active")}
+                                    className={`px-3 py-2.5 rounded-xl font-semibold border transition-all cursor-pointer ${
+                                        status === "active"
+                                            ? "bg-sky-500/20 border-sky-500 text-sky-400 shadow-sm"
+                                            : "bg-[#0B0F17] text-slate-400 border-sky-700/80 hover:text-white"
+                                    }`}
+                                >
+                                    🔵 In Development
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setStatus("completed")}
+                                    className={`px-3 py-2.5 rounded-xl font-semibold border transition-all cursor-pointer ${
+                                        status === "completed"
+                                            ? "bg-slate-700 border-slate-500 text-slate-200 shadow-sm"
+                                            : "bg-[#0B0F17] text-slate-400 border-sky-700/80 hover:text-white"
+                                    }`}
+                                >
+                                    ✓ Completed
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Project Scope Selection */}
+                        <div>
+                            <label className="block font-semibold text-slate-300 mb-1.5">Project Scope</label>
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setScope("campus")}
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold border transition-all cursor-pointer ${
+                                        scope === "campus"
+                                            ? "bg-sky-600 text-white border-sky-500 shadow-md"
+                                            : "bg-[#0B0F17] text-slate-400 border-sky-700/80 hover:text-white"
+                                    }`}
+                                >
+                                    <Building2 className="w-4 h-4 text-sky-400" />
+                                    <span>Campus Feed</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setScope("global")}
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold border transition-all cursor-pointer ${
+                                        scope === "global"
+                                            ? "bg-sky-600 text-white border-sky-500 shadow-md"
+                                            : "bg-[#0B0F17] text-slate-400 border-sky-700/80 hover:text-white"
+                                    }`}
+                                >
+                                    <Globe className="w-4 h-4 text-sky-400" />
+                                    <span>Global Feed</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div>
@@ -224,7 +312,6 @@ function CreateProject() {
                         </p>
 
                         <div className="space-y-4 text-xs">
-                            {/* Title Recommendation */}
                             <div className="bg-[#0B0F17] p-3.5 rounded-xl border border-sky-700/50">
                                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1 block">Suggested Title</span>
                                 <div className="flex items-center justify-between gap-3">
@@ -239,7 +326,6 @@ function CreateProject() {
                                 </div>
                             </div>
 
-                            {/* Description Recommendation */}
                             <div className="bg-[#0B0F17] p-3.5 rounded-xl border border-sky-700/50">
                                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1 block">Suggested Description</span>
                                 <p className="text-slate-300 text-xs leading-relaxed mb-3">{suggestions.suggestedDesc}</p>
@@ -252,7 +338,6 @@ function CreateProject() {
                                 </button>
                             </div>
 
-                            {/* Skills & Roles Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="bg-[#0B0F17] p-3.5 rounded-xl border border-sky-700/50">
                                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 block">Recommended Skills</span>
@@ -285,7 +370,6 @@ function CreateProject() {
                             </div>
                         </div>
 
-                        {/* Modal Action Buttons */}
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-800">
                             <button
                                 type="button"

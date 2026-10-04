@@ -3,9 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import Layout from "../Components/Layout";
 import BackButton from "../Components/BackButton";
-import { SquarePen, Sparkles, X, Check, ArrowRight, Save, Building2, Globe } from "lucide-react";
+import { SquarePen, Sparkles, X, Check, ArrowRight, Save, Building2, Globe, Activity } from "lucide-react";
 import toast from "react-hot-toast";
 import CustomToast from "../Components/CustomToast";
+import { useAuth } from "../Context/AuthContext";
 
 interface AISuggestions {
     suggestedTitle: string;
@@ -18,6 +19,7 @@ interface AISuggestions {
 function EditProject() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth(); // Access creator's user profile
 
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
@@ -25,6 +27,7 @@ function EditProject() {
     const [membersRequired, setMembersRequired] = useState<number>(1);
     const [scope, setScope] = useState<"campus" | "global">("campus");
     const [universityName, setUniversityName] = useState("");
+    const [status, setStatus] = useState<"recruitment" | "active" | "completed">("recruitment");
     const [message, setMessage] = useState("");
 
     // AI Analysis Modal State
@@ -56,9 +59,14 @@ function EditProject() {
             const count = project.membersRequired ?? project.memberRequired ?? 1;
             setMembersRequired(Number(count));
             
-            // Populate scope & university
             setScope(project.scope || "campus");
-            setUniversityName(project.universityName || "");
+            
+            // Auto-fetch leader's university if project universityName is blank
+            const leaderUniversity = project.universityName || project.creator?.university || user?.university || "";
+            setUniversityName(leaderUniversity);
+
+            // Populate status phase
+            setStatus(project.status || "recruitment");
         } catch (err) {
             console.error("Failed to fetch project details:", err);
             setMessage("Failed to load project details.");
@@ -126,6 +134,7 @@ function EditProject() {
         try {
             const skillsArray = requiredSkills ? requiredSkills.split(",").map((s) => s.trim()).filter(Boolean) : [];
 
+            // 1. Update general project details
             await api.put(`/projects/${id}`, {
                 title,
                 desc,
@@ -134,16 +143,19 @@ function EditProject() {
                 membersRequired,
                 memberRequired: membersRequired,
                 scope,
-                universityName,
+                universityName: universityName || user?.university || "Campus",
                 aiAnalysis: suggestions ? {
                     ...suggestions,
                     analyzedAt: new Date(),
                 } : undefined,
             });
 
+            // 2. Update lifecycle status phase
+            await api.patch(`/projects/${id}/status`, { status });
+
             toast.remove(toastId);
             toast.custom(() => (
-                <CustomToast type="success" title="Project Updated" message="Your project has been updated successfully" />
+                <CustomToast type="success" title="Project Updated" message="Your project details and phase have been updated." />
             ), { duration: 1500 });
 
             navigate("/my-projects");
@@ -151,7 +163,7 @@ function EditProject() {
             toast.remove(toastId);
             toast.custom(() => (
                 <CustomToast type="error" title="Update Failed" message={err.response?.data?.error || "Unable to update the project. Please try again."} />
-            ), { duration: 1500 });
+            ), { duration: 2000 });
         }
     };
 
@@ -160,7 +172,6 @@ function EditProject() {
             <BackButton />
 
             <div className="max-w-2xl mx-auto py-4 px-2">
-                {/* Form Container */}
                 <div className="bg-slate-900/60 backdrop-blur-md border border-sky-700 rounded-2xl p-6 md:p-8 shadow-2xl space-y-6">
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sky-700/60 pb-5">
@@ -170,7 +181,7 @@ function EditProject() {
                             </div>
                             <div>
                                 <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Edit Project</h1>
-                                <p className="text-xs text-slate-400">Modify title, scope, tech stack, and member requirements.</p>
+                                <p className="text-xs text-slate-400">Modify title, phase, scope, tech stack, and member requirements.</p>
                             </div>
                         </div>
 
@@ -198,6 +209,50 @@ function EditProject() {
                             />
                         </div>
 
+                        {/* Project Phase / Status Selector */}
+                        <div>
+                            <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                                <Activity className="w-3.5 h-3.5 text-sky-400" />
+                                <span>Project Phase (Lifecycle Status)</span>
+                            </label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setStatus("recruitment")}
+                                    className={`px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                                        status === "recruitment"
+                                            ? "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-sm"
+                                            : "bg-[#0B0F17] text-slate-400 border-sky-700/80 hover:text-white"
+                                    }`}
+                                >
+                                    🟢 Recruitment Phase
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setStatus("active")}
+                                    className={`px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                                        status === "active"
+                                            ? "bg-sky-500/20 border-sky-500 text-sky-400 shadow-sm"
+                                            : "bg-[#0B0F17] text-slate-400 border-sky-700/80 hover:text-white"
+                                    }`}
+                                >
+                                    🔵 Development Phase
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setStatus("completed")}
+                                    className={`px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                                        status === "completed"
+                                            ? "bg-slate-700 border-slate-500 text-slate-200 shadow-sm"
+                                            : "bg-[#0B0F17] text-slate-400 border-sky-700/80 hover:text-white"
+                                    }`}
+                                >
+                                    ✓ Completed
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Project Scope */}
                         <div>
                             <label className="block font-semibold text-slate-300 mb-1.5">Project Scope</label>
                             <div className="flex gap-3">
@@ -228,12 +283,16 @@ function EditProject() {
                             </div>
                         </div>
 
+                        {/* Auto-fetched University */}
                         <div>
-                            <label className="block font-semibold text-slate-300 mb-1.5">University / Organization</label>
+                            <label className="block font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                                <span>Leader's University / Organization</span>
+                                <span className="text-[10px] text-sky-400 font-normal">Auto-fetched from Leader Profile</span>
+                            </label>
                             <input
                                 value={universityName}
                                 onChange={(e) => setUniversityName(e.target.value)}
-                                placeholder="e.g. Indira Gandhi Delhi Technical University for Women"
+                                placeholder="Auto-fetches leader's university..."
                                 className="w-full bg-[#0B0F17] border border-sky-700/80 rounded-xl px-3.5 py-2.5 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
                             />
                         </div>
@@ -307,7 +366,6 @@ function EditProject() {
                         </p>
 
                         <div className="space-y-4 text-xs">
-                            {/* Title Recommendation */}
                             <div className="bg-[#0B0F17] p-3.5 rounded-xl border border-sky-700/50">
                                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1 block">Suggested Title</span>
                                 <div className="flex items-center justify-between gap-3">
@@ -322,7 +380,6 @@ function EditProject() {
                                 </div>
                             </div>
 
-                            {/* Description Recommendation */}
                             <div className="bg-[#0B0F17] p-3.5 rounded-xl border border-sky-700/50">
                                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1 block">Suggested Description</span>
                                 <p className="text-slate-300 text-xs leading-relaxed mb-3">{suggestions.suggestedDesc}</p>
@@ -335,7 +392,6 @@ function EditProject() {
                                 </button>
                             </div>
 
-                            {/* Skills & Roles Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="bg-[#0B0F17] p-3.5 rounded-xl border border-sky-700/50">
                                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 block">Recommended Skills</span>
@@ -368,7 +424,6 @@ function EditProject() {
                             </div>
                         </div>
 
-                        {/* Modal Action Buttons */}
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-800">
                             <button
                                 type="button"

@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProject, getAllProjects, getProjectById, getMyCreatedProject , updateProject, deleteProject, analyzeDraft, getSkillGapAnalysis} from '../Controllers/ProjectController.js';
+import { createProject, getAllProjects, getProjectById, getMyCreatedProject , updateProject, deleteProject, analyzeDraft, getSkillGapAnalysis, updateProjectStatus} from '../Controllers/ProjectController.js';
 import { verifyToken } from '../Middlewares/authMiddleWare.js';
 
 
@@ -33,6 +33,7 @@ router.put('/:id',verifyToken,updateProject);
 //Delete project http://localhost:3000/api/projects/:id
 router.delete('/:id',verifyToken,deleteProject);
  
+router.patch("/:id/status",verifyToken, updateProjectStatus);
 
 
 export default router;
