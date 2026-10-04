@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import Layout from "../Components/Layout";
 import BackButton from "../Components/BackButton";
-import { SquarePen, Sparkles, X, Check, ArrowRight, Save } from "lucide-react";
+import { SquarePen, Sparkles, X, Check, ArrowRight, Save, Building2, Globe } from "lucide-react";
 import toast from "react-hot-toast";
 import CustomToast from "../Components/CustomToast";
 
@@ -23,6 +23,8 @@ function EditProject() {
     const [desc, setDesc] = useState("");
     const [requiredSkills, setRequiredSkills] = useState("");
     const [membersRequired, setMembersRequired] = useState<number>(1);
+    const [scope, setScope] = useState<"campus" | "global">("campus");
+    const [universityName, setUniversityName] = useState("");
     const [message, setMessage] = useState("");
 
     // AI Analysis Modal State
@@ -53,6 +55,10 @@ function EditProject() {
 
             const count = project.membersRequired ?? project.memberRequired ?? 1;
             setMembersRequired(Number(count));
+            
+            // Populate scope & university
+            setScope(project.scope || "campus");
+            setUniversityName(project.universityName || "");
         } catch (err) {
             console.error("Failed to fetch project details:", err);
             setMessage("Failed to load project details.");
@@ -127,6 +133,8 @@ function EditProject() {
                 skillsRequired: skillsArray,
                 membersRequired,
                 memberRequired: membersRequired,
+                scope,
+                universityName,
                 aiAnalysis: suggestions ? {
                     ...suggestions,
                     analyzedAt: new Date(),
@@ -162,7 +170,7 @@ function EditProject() {
                             </div>
                             <div>
                                 <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Edit Project</h1>
-                                <p className="text-xs text-slate-400">Modify title, tech stack, and member requirements.</p>
+                                <p className="text-xs text-slate-400">Modify title, scope, tech stack, and member requirements.</p>
                             </div>
                         </div>
 
@@ -186,6 +194,46 @@ function EditProject() {
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Project Title"
+                                className="w-full bg-[#0B0F17] border border-sky-700/80 rounded-xl px-3.5 py-2.5 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block font-semibold text-slate-300 mb-1.5">Project Scope</label>
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setScope("campus")}
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                                        scope === "campus"
+                                            ? "bg-sky-600 text-white border-sky-500 shadow-md"
+                                            : "bg-[#0B0F17] text-slate-400 border-sky-700/80 hover:text-white"
+                                    }`}
+                                >
+                                    <Building2 className="w-4 h-4 text-sky-400" />
+                                    <span>Campus Feed</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setScope("global")}
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                                        scope === "global"
+                                            ? "bg-sky-600 text-white border-sky-500 shadow-md"
+                                            : "bg-[#0B0F17] text-slate-400 border-sky-700/80 hover:text-white"
+                                    }`}
+                                >
+                                    <Globe className="w-4 h-4 text-sky-400" />
+                                    <span>Global Feed</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block font-semibold text-slate-300 mb-1.5">University / Organization</label>
+                            <input
+                                value={universityName}
+                                onChange={(e) => setUniversityName(e.target.value)}
+                                placeholder="e.g. Indira Gandhi Delhi Technical University for Women"
                                 className="w-full bg-[#0B0F17] border border-sky-700/80 rounded-xl px-3.5 py-2.5 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
                             />
                         </div>
