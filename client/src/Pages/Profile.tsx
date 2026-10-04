@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../Context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -19,7 +19,33 @@ import {
   Save,
   Pencil,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
+
+interface UniversityOption {
+  name: string;
+  country: string;
+}
+
+interface LocationOption {
+  display_name: string;
+}
+
+// Fallback local list of major institutions
+const POPULAR_UNIVERSITIES: UniversityOption[] = [
+  { name: 'Indian Institute of Technology Bombay (IIT Bombay)', country: 'India' },
+  { name: 'Indian Institute of Technology Delhi (IIT Delhi)', country: 'India' },
+  { name: 'Indian Institute of Technology Madras (IIT Madras)', country: 'India' },
+  { name: 'Indian Institute of Technology Kanpur (IIT Kanpur)', country: 'India' },
+  { name: 'Indian Institute of Science (IISc) Bangalore', country: 'India' },
+  { name: 'Delhi Technological University (DTU)', country: 'India' },
+  { name: 'Vellore Institute of Technology (VIT)', country: 'India' },
+  { name: 'Stanford University', country: 'United States' },
+  { name: 'Massachusetts Institute of Technology (MIT)', country: 'United States' },
+  { name: 'Harvard University', country: 'United States' },
+  { name: 'University of Oxford', country: 'United Kingdom' },
+  { name: 'University of Cambridge', country: 'United Kingdom' },
+];
 
 export default function Profile(): React.ReactElement {
   const { user, updateUser } = useAuth();
@@ -37,6 +63,18 @@ export default function Profile(): React.ReactElement {
   const [branch, setBranch] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
 
+  // Autocomplete States
+  const [universitySuggestions, setUniversitySuggestions] = useState<UniversityOption[]>([]);
+  const [loadingUniversity, setLoadingUniversity] = useState<boolean>(false);
+  const [showUniversityDropdown, setShowUniversityDropdown] = useState<boolean>(false);
+
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationOption[]>([]);
+  const [loadingLocation, setLoadingLocation] = useState<boolean>(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState<boolean>(false);
+
+  const universityRef = useRef<HTMLDivElement>(null);
+  const locationRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (user) {
       setBio(user.bio || '');
@@ -48,6 +86,122 @@ export default function Profile(): React.ReactElement {
       setBranch(user.branch || '');
     }
   }, [user]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (universityRef.current && !universityRef.current.contains(event.target as Node)) {
+        setShowUniversityDropdown(false);
+      }
+      if (locationRef.current && !locationRef.current.contains(event.target as Node)) {
+        setShowLocationDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // --- Helper: Extract Country Name safely from Nominatim Display String ---
+  const getCountryFromLocation = (locString: string): string => {
+    if (!locString) return '';
+    const parts = locString.split(',');
+    return parts[parts.length - 1].trim().toLowerCase();
+  };
+
+  // --- 1. Debounced Location API Autocomplete (Nominatim OpenStreetMap) ---
+  useEffect(() => {
+    if (!location.trim() || location.length < 2) {
+      setLocationSuggestions([]);
+      setLoadingLocation(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setLoadingLocation(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            location.trim()
+          )}&addressdetails=1&limit=5`
+        );
+        const data = await response.json();
+        setLocationSuggestions(data);
+      } catch (error) {
+        console.error('Error fetching location suggestions:', error);
+      } finally {
+        setLoadingLocation(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [location]);
+
+  // --- Debounced & Location-Filtered University Autocomplete ---
+useEffect(() => {
+  if (!university.trim() || university.length < 2) {
+    setUniversitySuggestions([]);
+    setLoadingUniversity(false);
+    return;
+  }
+
+  const timer = setTimeout(async () => {
+    setLoadingUniversity(true);
+    const query = university.trim();
+    const userCountry = getCountryFromLocation(location);
+
+    try {
+      // 1. Build light HTTPS API query (Hipo Labs endpoint over https)
+      let apiUrl = `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}`;
+      if (userCountry) {
+        apiUrl += `&country=${encodeURIComponent(userCountry)}`;
+      }
+
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+
+      let results = data;
+
+      // 2. Fallback: If country filtering yielded no results, query globally by university name
+      if ((!results || results.length === 0) && userCountry) {
+        const fallbackRes = await fetch(
+          `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}`
+        );
+        results = await fallbackRes.json();
+      }
+
+      if (Array.isArray(results) && results.length > 0) {
+        const formatted: UniversityOption[] = results.slice(0, 8).map((u: any) => ({
+          name: u.name,
+          country: u.country,
+        }));
+        setUniversitySuggestions(formatted);
+        setLoadingUniversity(false);
+        return;
+      }
+    } catch (err) {
+      console.warn('Live API fetch failed, checking local search:', err);
+    }
+
+    // 3. Secondary Local Fallback
+    const localMatches = POPULAR_UNIVERSITIES.filter((u) => {
+      const matchesName = u.name.toLowerCase().includes(query.toLowerCase());
+      const matchesCountry = userCountry ? u.country.toLowerCase().includes(userCountry.toLowerCase()) : true;
+      return matchesName && matchesCountry;
+    });
+
+    if (localMatches.length > 0) {
+      setUniversitySuggestions(localMatches);
+    } else {
+      setUniversitySuggestions([
+        { name: query, country: userCountry ? userCountry.toUpperCase() : 'Custom Entry' },
+      ]);
+    }
+
+    setLoadingUniversity(false);
+  }, 350);
+
+  return () => clearTimeout(timer);
+}, [university, location]);
 
   const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -107,13 +261,13 @@ export default function Profile(): React.ReactElement {
       <BackButton />
 
       <div className="max-w-3xl mx-auto py-4 px-2">
-        {/* Main Profile Card */}
+        {/* Main Profile Card View */}
         <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl space-y-6">
           
-          {/* Card Header: Avatar, Name & Edit Trigger */}
+          {/* Card Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-linear-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-sky-400/30 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-sky-400/30 shrink-0">
                 {user?.name ? user.name.charAt(0).toUpperCase() : <UserIcon className="w-7 h-7" />}
               </div>
               <div>
@@ -174,7 +328,7 @@ export default function Profile(): React.ReactElement {
             </p>
           </div>
 
-          {/* Skills Badges with Hover Animation */}
+          {/* Skills Section */}
           <div className="space-y-2">
             <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
               <Code className="w-3.5 h-3.5 text-sky-400" /> Skills
@@ -195,7 +349,7 @@ export default function Profile(): React.ReactElement {
             </div>
           </div>
 
-          {/* Interests Badges with Hover Animation */}
+          {/* Interests Section */}
           <div className="space-y-2">
             <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
               <Heart className="w-3.5 h-3.5 text-purple-400" /> Interests
@@ -234,12 +388,98 @@ export default function Profile(): React.ReactElement {
               <Sparkles className="w-5 h-5 text-purple-400" /> Edit Profile Details
             </h2>
             <p className="text-xs text-slate-400 mb-6">
-              Keep your information updated to get accurate AI project role matches.
+              Select your location first to automatically filter university suggestions for accurate campus feed matching.
             </p>
 
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               
-              {/* Job Profile & University */}
+              {/* Location First Flow */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Location Input */}
+                <div ref={locationRef} className="relative">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-sky-400" /> 1. Location / Country
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setLocation(e.target.value);
+                        setShowLocationDropdown(true);
+                      }}
+                      onFocus={() => setShowLocationDropdown(true)}
+                      placeholder="Search city or country..."
+                      className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 pr-8 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
+                    />
+                    {loadingLocation && (
+                      <Loader2 className="w-3.5 h-3.5 text-sky-400 animate-spin absolute right-3 top-3" />
+                    )}
+                  </div>
+
+                  {showLocationDropdown && locationSuggestions.length > 0 && (
+                    <div className="absolute z-20 w-full mt-1 bg-[#0F172A] border border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                      {locationSuggestions.map((item, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => {
+                            setLocation(item.display_name);
+                            setShowLocationDropdown(false);
+                          }}
+                          className="p-2.5 text-xs text-slate-200 hover:bg-sky-600/30 hover:text-white cursor-pointer transition border-b border-slate-800/50 last:border-0 truncate"
+                        >
+                          {item.display_name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Country-Aware University Input */}
+                <div ref={universityRef} className="relative">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
+                    <GraduationCap className="w-3.5 h-3.5 text-sky-400" /> 2. University / Organization
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={university}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setUniversity(e.target.value);
+                        setShowUniversityDropdown(true);
+                      }}
+                      onFocus={() => setShowUniversityDropdown(true)}
+                      placeholder="Search university..."
+                      className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 pr-8 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
+                    />
+                    {loadingUniversity && (
+                      <Loader2 className="w-3.5 h-3.5 text-sky-400 animate-spin absolute right-3 top-3" />
+                    )}
+                  </div>
+
+                  {showUniversityDropdown && universitySuggestions.length > 0 && (
+                    <div className="absolute z-20 w-full mt-1 bg-[#0F172A] border border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                      {universitySuggestions.map((item, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => {
+                            setUniversity(item.name);
+                            setShowUniversityDropdown(false);
+                          }}
+                          className="p-2.5 text-xs text-slate-200 hover:bg-sky-600/30 hover:text-white cursor-pointer transition border-b border-slate-800/50 last:border-0 flex flex-col"
+                        >
+                          <span className="font-semibold">{item.name}</span>
+                          <span className="text-[10px] text-slate-400">{item.country}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+
+              {/* Job Profile & Branch */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
@@ -260,22 +500,6 @@ export default function Profile(): React.ReactElement {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <GraduationCap className="w-3.5 h-3.5 text-sky-400" /> University / Organization
-                  </label>
-                  <input
-                    type="text"
-                    value={university}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUniversity(e.target.value)}
-                    placeholder="e.g. Stanford University"
-                    className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
-                  />
-                </div>
-              </div>
-
-              {/* Branch & Location */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
                     <BookOpen className="w-3.5 h-3.5 text-sky-400" /> Branch / Specialization
                   </label>
                   <input
@@ -283,19 +507,6 @@ export default function Profile(): React.ReactElement {
                     value={branch}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBranch(e.target.value)}
                     placeholder="e.g. Computer Science"
-                    className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-sky-400" /> Location
-                  </label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocation(e.target.value)}
-                    placeholder="e.g. New York, USA"
                     className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/80"
                   />
                 </div>
@@ -343,7 +554,7 @@ export default function Profile(): React.ReactElement {
                 />
               </div>
 
-              {/* Modal Action Buttons */}
+              {/* Modal Actions */}
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
@@ -367,4 +578,4 @@ export default function Profile(): React.ReactElement {
       )}
     </Layout>
   );
-}
+} 

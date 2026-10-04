@@ -1,42 +1,44 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: {
-    type: String,
-    required: function () {
-      // Check if either OAuth ID is present on the instance
-      if (this.googleId || this.githubId) return false;
-      return true;
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: {
+      type: String,
+      required: function () {
+        if (this.googleId || this.githubId) return false;
+        return true;
+      },
     },
-  },
-  bio: { type: String, default: "" },
-  skills: { type: [String], default: [] },
-  interests: { type: [String], default: [] },
-  
-  // --- New Profile Fields ---
-  location: { type: String, default: "" },
-  university: { type: String, default: "" },
-  jobProfile: { 
-    type: String, 
-    enum: ["Student", "Working Professional", "Freelancer", "Other", ""], 
-    default: "" 
-  },
-  branch: { type: String, default: "" },
+    bio: { type: String, default: "" },
+    skills: { type: [String], default: [] },
+    interests: { type: [String], default: [] },
 
-  isEmailVerified: { type: Boolean, default: false },
-  emailVerificationTokenHash: { type: String, default: null },
-  emailVerificationTokenExpiry: { type: Date, default: null },
-  resetPasswordTokenHash: { type: String, default: null },
-  resetPasswordTokenExpiry: { type: Date, default: null },
+    // --- Profile & University Scope Fields ---
+    location: { type: String, default: "" },
+    university: { type: String, default: "", trim: true, index: true },
+    jobProfile: {
+      type: String,
+      enum: ["Student", "Working Professional", "Freelancer", "Other", ""],
+      default: "",
+    },
+    branch: { type: String, default: "" },
 
-  githubId: { type: String, unique: true, sparse: true },
-  githubAccessToken: { type: String, select: false },
-  githubUsername: { type: String },
-  
-  googleId: { type: String, unique: true, sparse: true },
-});
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationTokenHash: { type: String, default: null },
+    emailVerificationTokenExpiry: { type: Date, default: null },
+    resetPasswordTokenHash: { type: String, default: null },
+    resetPasswordTokenExpiry: { type: Date, default: null },
+
+    githubId: { type: String, unique: true, sparse: true },
+    githubAccessToken: { type: String, select: false },
+    githubUsername: { type: String },
+
+    googleId: { type: String, unique: true, sparse: true },
+  },
+  { timestamps: true }
+);
 
 userSchema.set("toJSON", {
   transform: (doc, ret) => {
